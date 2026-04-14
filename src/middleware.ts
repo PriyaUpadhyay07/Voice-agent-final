@@ -1,4 +1,7 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
+
+export const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { nextUrl } = req;
@@ -6,7 +9,7 @@ export default auth((req) => {
   console.log(`[MIDDLEWARE] ${req.method} ${nextUrl.pathname} — Host: ${req.headers.get("host")}`);
 
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
-  const isPublicRoute = ["/", "/login", "/signup"].includes(nextUrl.pathname);
+  const isPublicRoute = ["/", "/login", "/signup", "/privacy", "/terms"].includes(nextUrl.pathname);
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
   const isClientRoute = nextUrl.pathname.startsWith("/client");
 

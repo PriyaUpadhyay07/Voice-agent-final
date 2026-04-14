@@ -4,8 +4,10 @@ import prisma from "@/lib/db";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { authConfig } from "./auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
   session: { 
     strategy: "jwt",
@@ -48,25 +50,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = (user as any).role;
-        token.status = (user as any).status;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).role = token.role;
-        (session.user as any).status = token.status;
-      }
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/login",
-  },
 });
