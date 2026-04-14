@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("client")
+  status        String    @default("pending")
+  walletAmount  Float     @default(0)
+  script        String?   @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  leads         Lead[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Lead {
+  id           String    @id @default(cuid())
+  userId       String
+  phone        String
+  email        String?
+  name         String
+  company      String?
+  status       String    @default("pending")
+  rejectReason String?
+  scheduledAt  DateTime?
+  timezone     String?
+  createdAt    DateTime  @default(now())
+  calls        Call[]
+  user         User      @relation(fields: [userId], references: [id])
+}
+
+model Call {
+  id           String   @id @default(cuid())
+  leadId       String
+  duration     Int      @default(0)
+  costDeducted Float    @default(0)
+  transcript   String?
+  status       String?
+  createdAt    DateTime @default(now())
+  lead         Lead     @relation(fields: [leadId], references: [id])
+}
