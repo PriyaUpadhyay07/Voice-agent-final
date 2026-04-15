@@ -1,20 +1,21 @@
 import NextAuth from "next-auth";
-import { authConfig } from "@/auth.config";
+import { authConfig } from "./auth.config";
 
-export const { auth } = NextAuth(authConfig);
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { nextUrl } = req;
   const isLoggedIn = !!req.auth;
-  console.log(`[MIDDLEWARE] ${req.method} ${nextUrl.pathname} — Host: ${req.headers.get("host")}`);
-
+  
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
   const isPublicRoute = ["/", "/login", "/signup", "/privacy", "/terms"].includes(nextUrl.pathname);
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
   const isClientRoute = nextUrl.pathname.startsWith("/client");
 
+  // 1. Allow API auth routes
   if (isApiAuthRoute) return;
 
+  // 2. Public route logic
   if (isPublicRoute) {
     if (isLoggedIn) {
       const role = (req.auth?.user as any)?.role;
@@ -23,24 +24,22 @@ export default auth((req) => {
     return;
   }
 
+  // 3. Protected route logic
   if (!isLoggedIn) {
-    // TOTAL BYPASS: Allow direct access via local or tunnel URLs
     const host = req.headers.get("host") || "";
     const isProtected = isAdminRoute || isClientRoute;
 
-    if (isProtected) {
-      if (host.includes("localhost") || host.includes("loca.lt") || host.includes("trycloudflare")) {
-        return; // Allow direct access
-      }
+    // Local/Tunnel Bypass
+    if (isProtected && (host.includes("localhost") || host.includes("loca.lt") || host.includes("trycloudflare"))) {
+      return; 
     }
     
-    // Default: Don't redirect to login if we are already on a public route or if it matches tunnel
-    return; 
+    // Redirect to login if not logged in and not on public route
+    return Response.redirect(new URL("/login", nextUrl));
   }
 
-  // Role based access control
+  // 4. Role based access control
   const userRole = (req.auth?.user as any)?.role;
-  // Admin can access everything
   if (userRole === "admin") return;
 
   if (isAdminRoute && userRole !== "admin") {
