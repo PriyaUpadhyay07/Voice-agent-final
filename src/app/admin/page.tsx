@@ -3,6 +3,8 @@ import prisma from '../../lib/db';
 import { Users, PhoneCall, DollarSign, Activity, LogOut } from 'lucide-react';
 import { auth, signOut } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminDashboard() {
   const session = await auth();
   const clients = await prisma.user.findMany({ where: { role: 'client' } });
