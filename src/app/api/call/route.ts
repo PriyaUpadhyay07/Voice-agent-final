@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
       formattedPhone = `sip:${formattedPhone}`;
     }
 
-    const provider = (process.env.CALL_PROVIDER || 'twilio').toLowerCase();
+    // Force Twilio for more stable international calls during testing
+    const provider = 'twilio';
     let callSid = '';
 
     // Helper for timeout
