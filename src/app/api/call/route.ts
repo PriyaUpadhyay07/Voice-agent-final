@@ -1,23 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../lib/db';
-import { RestClient } from '@signalwire/compatibility-api';
 import twilio from 'twilio';
 
-// No top-level client initialization to prevent module-level crashes on Vercel
-function getTelephonyClients() {
-  const twilioClient = twilio(
-    process.env.TWILIO_ACCOUNT_SID || 'MISSING',
-    process.env.TWILIO_AUTH_TOKEN || 'MISSING'
-  );
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID || 'MISSING',
+  process.env.TWILIO_AUTH_TOKEN || 'MISSING'
+);
 
-  const signalwireClient = RestClient(
-    process.env.SIGNALWIRE_PROJECT_ID || 'MISSING',
-    process.env.SIGNALWIRE_API_TOKEN || 'MISSING',
-    { signalwireSpaceUrl: process.env.SIGNALWIRE_SPACE_URL || 'MISSING' }
-  );
-
-  return { twilioClient, signalwireClient };
-}
 
 
 
@@ -83,7 +72,6 @@ export async function POST(request: NextRequest) {
     });
 
     try {
-      const { signalwireClient, twilioClient } = getTelephonyClients();
       const agentId = process.env.ELEVENLABS_AGENT_ID || '';
       const apiKey = process.env.ELEVENLABS_API_KEY || '';
 
@@ -105,13 +93,34 @@ export async function POST(request: NextRequest) {
       let callSid = '';
 
       if (provider === 'signalwire') {
-        const call = await signalwireClient.calls.create({
-          from: process.env.SIGNALWIRE_PHONE_NUMBER!,
-          to: formattedPhone,
-          url: elevenLabsUrl,
+        // Direct REST API call to SignalWire (No SDK dependency)
+        const projectId = process.env.SIGNALWIRE_PROJECT_ID;
+        const apiToken = process.env.SIGNALWIRE_API_TOKEN;
+        const spaceUrl = process.env.SIGNALWIRE_SPACE_URL;
+        
+        const auth = Buffer.from(`${projectId}:${apiToken}`).toString('base64');
+        const restUrl = `https://${spaceUrl}/api/laml/2010-04-01/Accounts/${projectId}/Calls`;
+
+        const swRes = await fetch(restUrl, {
           method: 'POST',
+          headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            From: process.env.SIGNALWIRE_PHONE_NUMBER!,
+            To: formattedPhone,
+            Url: elevenLabsUrl,
+          }),
         });
-        callSid = call.sid;
+
+        if (!swRes.ok) {
+          const swError = await swRes.text();
+          throw new Error(`SignalWire API Error: ${swError}`);
+        }
+
+        const swData: any = await swRes.json();
+        callSid = swData.sid;
       } else {
         const call = await twilioClient.calls.create({
           from: process.env.TWILIO_PHONE_NUMBER!,
@@ -129,10 +138,12 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ success: true, callSid });
     } catch (innerError: any) {
+      console.error('Telephony Inner Error:', innerError);
       // Revert status on inner failure
       await prisma.lead.update({ where: { id: leadId }, data: { status: 'failed' } });
       return NextResponse.json({ error: `Telephony Error: ${innerError.message}` }, { status: 500 });
     }
+
   } catch (error: any) {
     console.error('CRITICAL CALL API ERROR:', error);
     return NextResponse.json({ error: `System Error: ${error.message}` }, { status: 500 });
