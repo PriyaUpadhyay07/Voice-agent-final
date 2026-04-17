@@ -239,42 +239,48 @@ export default function AdminLeadsPage() {
   }
 
   async function runAllCalls() {
-    // RUN ON ALL LEADS REGARDLESS OF STATUS FOR TESTING
-    const leadsToCall = leads;
+    // Filter out SIP addresses - only call real phone numbers
+    const leadsToCall = leads.filter(l => !l.phone.includes('@'));
     if (leadsToCall.length === 0) {
-      alert("No leads available to call. Please add a lead first.");
+      alert("No callable leads. SIP addresses are skipped.");
       return;
     }
     
-    if (!confirm(`Are you sure you want to run calls for ${leadsToCall.length} leads? (This will bypass status checks for testing).`)) return;
+    if (!confirm(`Run AI agent on ${leadsToCall.length} leads? Each call will wait 60 seconds before the next one starts.`)) return;
 
-    for (const lead of leadsToCall) {
-      // Force status to approved to bypass any backend checks if needed
+    for (let i = 0; i < leadsToCall.length; i++) {
+      const lead = leadsToCall[i];
       setActionLoading(lead.id);
-      try {
-        await fetch(`/api/leads/${lead.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'approved' }),
-        });
-      } catch (e) {
-        // ignore patch errors if api/leads/[id] isn't present
-      }
       
       // Initiate call
-      setActionLoading(lead.id);
-      const res = await fetch('/api/call', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: lead.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) alert(`Call failed for ${lead.name}: ` + (data.error || 'Unknown error'));
+      try {
+        const res = await fetch('/api/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leadId: lead.id }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(`Call failed for ${lead.name}: ` + (data.error || 'Unknown error'));
+        } else {
+          // Wait 60 seconds for AI to have conversation before next call
+          if (i < leadsToCall.length - 1) {
+            for (let sec = 60; sec > 0; sec--) {
+              setActionLoading(lead.id);
+              await new Promise(r => setTimeout(r, 1000));
+            }
+          }
+        }
+      } catch (e: any) {
+        alert(`Error calling ${lead.name}: ${e.message}`);
+      }
+      
       await fetchData();
     }
     setActionLoading(null);
-    alert("Agent has successfully initiated calls to all leads!");
+    alert("All calls completed!");
   }
+
 
   const filtered = filter === 'all' ? leads : leads.filter(l => l.status === filter);
 
