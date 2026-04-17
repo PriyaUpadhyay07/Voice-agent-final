@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../lib/db';
+import { RestClient } from '@signalwire/compatibility-api';
 import twilio from 'twilio';
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
   process.env.TWILIO_AUTH_TOKEN!
 );
+
+const signalwireClient = RestClient(
+  process.env.SIGNALWIRE_PROJECT_ID!,
+  process.env.SIGNALWIRE_API_TOKEN!,
+  { signalwireSpaceUrl: process.env.SIGNALWIRE_SPACE_URL! }
+);
+
 
 const COST_PER_MINUTE = 0.15; // $0.15/min
 const MIN_BALANCE = 1.0; // minimum wallet balance to initiate a call
@@ -86,18 +94,17 @@ export async function POST(request: NextRequest) {
       const elevenLabsUrl = `https://api.elevenlabs.io/v1/convai/twilio/outbound?agent_id=${agentId}&dynamic_variables=${encodedVars}&xi-api-key=${apiKey}`;
 
       let formattedPhone = formatPhoneNumber(lead.phone);
-      const provider = 'twilio'; // Forced for stability
       let callSid = '';
 
-      if (provider === 'twilio') {
-        const call = await twilioClient.calls.create({
-          from: process.env.TWILIO_PHONE_NUMBER!,
-          to: formattedPhone,
-          url: elevenLabsUrl,
-          method: 'POST',
-        });
-        callSid = call.sid;
-      }
+      // Use SignalWire (no trial restrictions, international approved)
+      const call = await signalwireClient.calls.create({
+        from: process.env.SIGNALWIRE_PHONE_NUMBER!,
+        to: formattedPhone,
+        url: elevenLabsUrl,
+        method: 'POST',
+      });
+      callSid = call.sid;
+
 
       await prisma.call.update({
         where: { id: callRecord.id },
