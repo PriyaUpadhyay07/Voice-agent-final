@@ -54,6 +54,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
+    // Skip SIP addresses - only real phone numbers can be called
+    if (lead.phone.includes('@')) {
+      return NextResponse.json({ error: 'Cannot call SIP addresses. Only phone numbers supported.' }, { status: 400 });
+    }
+
     // Check wallet balance
     if (lead.user.walletAmount < MIN_BALANCE) {
       return NextResponse.json({

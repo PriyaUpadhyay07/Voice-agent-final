@@ -5,13 +5,15 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   const agentId = request.nextUrl.searchParams.get('agent_id') || process.env.ELEVENLABS_AGENT_ID || '';
   
-  // ElevenLabs SIP URI - bridges the call to the AI agent
-  const sipUri = `sip:${agentId}@sip.rtc.elevenlabs.io`;
+  // ElevenLabs SIP URI - use the phone number registered in ElevenLabs
+  const phoneNumber = process.env.SIGNALWIRE_PHONE_NUMBER || '+12063393710';
+  // Strip the + for SIP URI
+  const cleanNumber = phoneNumber.replace('+', '');
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Dial>
-    <Sip>${sipUri}</Sip>
+    <Sip>sip:${cleanNumber}@sip.rtc.elevenlabs.io</Sip>
   </Dial>
 </Response>`;
 
