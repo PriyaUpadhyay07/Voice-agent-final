@@ -201,19 +201,33 @@ export default function AdminLeadsPage() {
 
   async function initiateCall(leadId: string) {
     setActionLoading(leadId);
-    const res = await fetch('/api/call', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadId }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.error || 'Call failed');
-    } else {
-      alert(`✅ Call initiated! SID: ${data.callSid}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
+    try {
+      const res = await fetch('/api/call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Call failed');
+      } else {
+        alert(`✅ Call initiated! SID: ${data.callSid}`);
+      }
+      await fetchData();
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        alert('⌛ Request timed out. The call might still be processing on the server, please check status in a moment.');
+      } else {
+        alert('Error: ' + (err.message || 'Unknown error'));
+      }
+    } finally {
+      setActionLoading(null);
     }
-    await fetchData();
-    setActionLoading(null);
   }
 
   async function deleteLead(id: string) {
