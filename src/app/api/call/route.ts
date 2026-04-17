@@ -3,16 +3,22 @@ import prisma from '../../../lib/db';
 import { RestClient } from '@signalwire/compatibility-api';
 import twilio from 'twilio';
 
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID!,
-  process.env.TWILIO_AUTH_TOKEN!
-);
+// No top-level client initialization to prevent module-level crashes on Vercel
+function getTelephonyClients() {
+  const twilioClient = twilio(
+    process.env.TWILIO_ACCOUNT_SID || 'MISSING',
+    process.env.TWILIO_AUTH_TOKEN || 'MISSING'
+  );
 
-const signalwireClient = RestClient(
-  process.env.SIGNALWIRE_PROJECT_ID!,
-  process.env.SIGNALWIRE_API_TOKEN!,
-  { signalwireSpaceUrl: process.env.SIGNALWIRE_SPACE_URL! }
-);
+  const signalwireClient = RestClient(
+    process.env.SIGNALWIRE_PROJECT_ID || 'MISSING',
+    process.env.SIGNALWIRE_API_TOKEN || 'MISSING',
+    { signalwireSpaceUrl: process.env.SIGNALWIRE_SPACE_URL || 'MISSING' }
+  );
+
+  return { twilioClient, signalwireClient };
+}
+
 
 
 const COST_PER_MINUTE = 0.15; // $0.15/min
@@ -77,6 +83,7 @@ export async function POST(request: NextRequest) {
     });
 
     try {
+      const { signalwireClient, twilioClient } = getTelephonyClients();
       const agentId = process.env.ELEVENLABS_AGENT_ID || '';
       const apiKey = process.env.ELEVENLABS_API_KEY || '';
 
@@ -94,21 +101,30 @@ export async function POST(request: NextRequest) {
       const elevenLabsUrl = `https://api.elevenlabs.io/v1/convai/twilio/outbound?agent_id=${agentId}&dynamic_variables=${encodedVars}&xi-api-key=${apiKey}`;
 
       let formattedPhone = formatPhoneNumber(lead.phone);
+      const provider = (process.env.CALL_PROVIDER || 'signalwire').toLowerCase();
       let callSid = '';
 
-      // Use SignalWire (no trial restrictions, international approved)
-      const call = await signalwireClient.calls.create({
-        from: process.env.SIGNALWIRE_PHONE_NUMBER!,
-        to: formattedPhone,
-        url: elevenLabsUrl,
-        method: 'POST',
-      });
-      callSid = call.sid;
-
+      if (provider === 'signalwire') {
+        const call = await signalwireClient.calls.create({
+          from: process.env.SIGNALWIRE_PHONE_NUMBER!,
+          to: formattedPhone,
+          url: elevenLabsUrl,
+          method: 'POST',
+        });
+        callSid = call.sid;
+      } else {
+        const call = await twilioClient.calls.create({
+          from: process.env.TWILIO_PHONE_NUMBER!,
+          to: formattedPhone,
+          url: elevenLabsUrl,
+          method: 'POST',
+        });
+        callSid = call.sid;
+      }
 
       await prisma.call.update({
         where: { id: callRecord.id },
-        data: { status: `twilio:${callSid}` },
+        data: { status: `${provider}:${callSid}` },
       });
 
       return NextResponse.json({ success: true, callSid });
