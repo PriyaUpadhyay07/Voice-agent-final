@@ -9,7 +9,7 @@ export default function Home() {
         <PhoneCall size={48} color="hsl(var(--primary))" style={{ marginBottom: '1rem', width: '100%' }} />
         <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Voice Calling AI Agent</h1>
         <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '1.125rem', marginBottom: '2rem', lineHeight: 1.6 }}>
-          Automate your cold outreach with an intelligent, conversational AI that never needs a break. Log in to your portal below.
+          Automate your cold outreach with an intelligent, conversational AI that never needs a break. Access your portal directly below.
         </p>
 
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
