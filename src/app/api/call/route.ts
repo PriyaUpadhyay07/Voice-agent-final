@@ -116,18 +116,24 @@ export async function POST(request: NextRequest) {
     const provider = (process.env.CALL_PROVIDER || 'twilio').toLowerCase();
     let callSid = '';
 
+    // Helper for timeout
+    const withTimeout = (promise: Promise<any>, ms: number) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Telephony provider timeout after 10s')), ms))
+      ]);
+    };
+
     if (provider === 'signalwire') {
-      // Initiate SignalWire call without status callback temporarily to avoid Cloudflare WAF drops
-      const call = await signalwireClient.calls.create({
+      const call = await withTimeout(signalwireClient.calls.create({
         from: process.env.SIGNALWIRE_PHONE_NUMBER!,
         to: formattedPhone,
         url: elevenLabsUrl,
         method: 'POST',
-      });
+      }), 10000);
       callSid = call.sid;
     } else {
-      // Initiate Twilio call
-      const call = await twilioClient.calls.create({
+      const call = await withTimeout(twilioClient.calls.create({
         from: process.env.TWILIO_PHONE_NUMBER!,
         to: formattedPhone,
         url: elevenLabsUrl,
@@ -135,7 +141,7 @@ export async function POST(request: NextRequest) {
         statusCallback: `${getBaseUrl(request)}/api/call/status`,
         statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
         statusCallbackMethod: 'POST',
-      });
+      }), 10000);
       callSid = call.sid;
     }
 
