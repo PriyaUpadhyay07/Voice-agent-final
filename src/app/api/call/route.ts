@@ -41,134 +41,84 @@ function formatPhoneNumber(raw: string): string {
 
 // POST /api/call — initiate a voice call to a lead
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { leadId } = body;
-
-  if (!leadId) {
-    return NextResponse.json({ error: 'leadId is required' }, { status: 400 });
-  }
-
-  const lead = await prisma.lead.findUnique({
-    where: { id: leadId },
-    include: { user: true },
-  });
-
-  if (!lead) {
-    return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
-  }
-
-  if (lead.status === 'calling') {
-    return NextResponse.json({ error: 'A call is already in progress for this lead' }, { status: 400 });
-  }
-
-  // Check wallet balance
-  if (lead.user.walletAmount < MIN_BALANCE) {
-    return NextResponse.json({
-      error: `Insufficient wallet balance. Minimum $${MIN_BALANCE} required. Current: $${lead.user.walletAmount.toFixed(2)}`,
-    }, { status: 402 });
-  }
-
-  // Update lead status to "calling"
-  await prisma.lead.update({
-    where: { id: leadId },
-    data: { status: 'calling' },
-  });
-
-  // Create call record
-  const callRecord = await prisma.call.create({
-    data: {
-      leadId,
-      status: 'initiated',
-      duration: 0,
-      costDeducted: 0,
-    },
-  });
-
   try {
-    // Build ElevenLabs URL with dynamic variables (script + lead info)
-    const agentId = process.env.ELEVENLABS_AGENT_ID!;
+    const body = await request.json();
+    const { leadId } = body;
 
-    // Pass the client's script and lead details as dynamic variables
-    const dynamicVars: Record<string, string> = {
-      lead_name: lead.name,
-      lead_phone: lead.phone,
-      lead_company: lead.company || 'Unknown',
-      call_record_id: callRecord.id,
-    };
-
-    // If client has a script, pass it as the calling instructions
-    if (lead.user.script && lead.user.script.trim()) {
-      dynamicVars.calling_script = lead.user.script;
+    if (!leadId) {
+      return NextResponse.json({ error: 'leadId is required' }, { status: 400 });
     }
 
-    const encodedVars = encodeURIComponent(JSON.stringify(dynamicVars));
-    const apiKey = process.env.ELEVENLABS_API_KEY!;
-    const elevenLabsUrl = `https://api.elevenlabs.io/v1/convai/twilio/outbound?agent_id=${agentId}&dynamic_variables=${encodedVars}&xi-api-key=${apiKey}`;
-
-    // Format phone number
-    let formattedPhone = formatPhoneNumber(lead.phone);
-    
-    // For SignalWire SIP dialing, ensure sip: prefix if it's an email-like URI
-    if (formattedPhone.includes('@') && !formattedPhone.toLowerCase().startsWith('sip:')) {
-      formattedPhone = `sip:${formattedPhone}`;
-    }
-
-    // Force Twilio for more stable international calls during testing
-    const provider = 'twilio';
-    let callSid = '';
-
-    // Helper for timeout
-    const withTimeout = (promise: Promise<any>, ms: number) => {
-      return Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Telephony provider timeout after 10s')), ms))
-      ]);
-    };
-
-    if (provider === 'signalwire') {
-      const call = await withTimeout(signalwireClient.calls.create({
-        from: process.env.SIGNALWIRE_PHONE_NUMBER!,
-        to: formattedPhone,
-        url: elevenLabsUrl,
-        method: 'POST',
-      }), 10000);
-      callSid = call.sid;
-    } else {
-      const call = await withTimeout(twilioClient.calls.create({
-        from: process.env.TWILIO_PHONE_NUMBER!,
-        to: formattedPhone,
-        url: elevenLabsUrl,
-        method: 'POST',
-        statusCallback: `${getBaseUrl(request)}/api/call/status`,
-        statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
-        statusCallbackMethod: 'POST',
-      }), 10000);
-      callSid = call.sid;
-    }
-
-    // Update call record with SID
-    await prisma.call.update({
-      where: { id: callRecord.id },
-      data: { status: `${provider}:${callSid}` },
+    const lead = await prisma.lead.findUnique({
+      where: { id: leadId },
+      include: { user: true },
     });
 
-    return NextResponse.json({
-      success: true,
-      callSid: callSid,
-      callRecordId: callRecord.id,
-    });
-  } catch (error: unknown) {
-    // Revert lead status on failure
-    await prisma.lead.update({ where: { id: leadId }, data: { status: 'failed' } });
-    await prisma.call.update({ where: { id: callRecord.id }, data: { status: 'failed' } });
+    if (!lead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
+    }
 
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ error: `Call failed: ${errorMessage}` }, { status: 500 });
+    // Check wallet balance
+    if (lead.user.walletAmount < MIN_BALANCE) {
+      return NextResponse.json({
+        error: `Insufficient wallet balance. Current: $${lead.user.walletAmount.toFixed(2)}`,
+      }, { status: 402 });
+    }
+
+    // Create call record
+    const callRecord = await prisma.call.create({
+      data: {
+        leadId,
+        status: 'initiated',
+        duration: 0,
+        costDeducted: 0,
+      },
+    });
+
+    try {
+      const agentId = process.env.ELEVENLABS_AGENT_ID || '';
+      const apiKey = process.env.ELEVENLABS_API_KEY || '';
+
+      const dynamicVars: Record<string, string> = {
+        lead_name: lead.name || 'Client',
+        lead_phone: lead.phone || '',
+        call_record_id: callRecord.id,
+      };
+
+      if (lead.user.script) {
+        dynamicVars.calling_script = lead.user.script;
+      }
+
+      const encodedVars = encodeURIComponent(JSON.stringify(dynamicVars));
+      const elevenLabsUrl = `https://api.elevenlabs.io/v1/convai/twilio/outbound?agent_id=${agentId}&dynamic_variables=${encodedVars}&xi-api-key=${apiKey}`;
+
+      let formattedPhone = formatPhoneNumber(lead.phone);
+      const provider = 'twilio'; // Forced for stability
+      let callSid = '';
+
+      if (provider === 'twilio') {
+        const call = await twilioClient.calls.create({
+          from: process.env.TWILIO_PHONE_NUMBER!,
+          to: formattedPhone,
+          url: elevenLabsUrl,
+          method: 'POST',
+        });
+        callSid = call.sid;
+      }
+
+      await prisma.call.update({
+        where: { id: callRecord.id },
+        data: { status: `twilio:${callSid}` },
+      });
+
+      return NextResponse.json({ success: true, callSid });
+    } catch (innerError: any) {
+      // Revert status on inner failure
+      await prisma.lead.update({ where: { id: leadId }, data: { status: 'failed' } });
+      return NextResponse.json({ error: `Telephony Error: ${innerError.message}` }, { status: 500 });
+    }
+  } catch (error: any) {
+    console.error('CRITICAL CALL API ERROR:', error);
+    return NextResponse.json({ error: `System Error: ${error.message}` }, { status: 500 });
   }
-}
-
-function getBaseUrl(request: NextRequest): string {
-  const host = request.headers.get('host') || 'localhost:3000';
-  const protocol = host.includes('localhost') ? 'http' : 'https';
-  return `${protocol}://${host}`;
 }
