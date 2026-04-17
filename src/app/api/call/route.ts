@@ -1,17 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../lib/db';
-import { RestClient } from '@signalwire/compatibility-api';
 import twilio from 'twilio';
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
   process.env.TWILIO_AUTH_TOKEN!
-);
-
-const signalwireClient = RestClient(
-  process.env.SIGNALWIRE_PROJECT_ID!,
-  process.env.SIGNALWIRE_API_TOKEN!,
-  { signalwireSpaceUrl: process.env.SIGNALWIRE_SPACE_URL! }
 );
 
 const COST_PER_MINUTE = 0.15; // $0.15/min
