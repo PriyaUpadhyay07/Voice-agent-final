@@ -4,12 +4,8 @@ import { auth } from '@/auth';
 
 // GET /api/leads
 export async function GET(request: NextRequest) {
-  let session = await auth();
-  const host = request.headers.get('host') || '';
-  
-  if (!session) {
-    session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
-  }
+  // Direct Access Force: Bypass auth() entirely
+  const session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
 
   const userRole = (session.user as any).role;
   let userId = (session.user as any).id;
@@ -31,12 +27,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/leads — create single or bulk leads OR bulk reset
 export async function POST(request: NextRequest) {
-  let session = await auth();
-  const host = request.headers.get('host') || '';
-  
-  if (!session) {
-    session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
-  }
+  // Direct Access Force: Bypass auth() entirely
+  const session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
 
   const body = await request.json();
   const { userId: bodyUserId, leads: bulkLeads, phone, name, company, action, status: resetStatus } = body;
