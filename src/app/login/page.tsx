@@ -14,13 +14,6 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const router = useRouter();
   
-  // AUTO-BYPASS: If anyone reaches this page, push them to admin immediately
-  useState(() => {
-    if (typeof window !== 'undefined') {
-      router.push("/admin");
-    }
-  });
-
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

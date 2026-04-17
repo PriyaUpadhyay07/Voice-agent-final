@@ -357,56 +357,104 @@ function ClientDashboardContent() {
           )}
         </div>
 
-        {/* Recent Leads */}
+        {/* Recent Leads - Sheet View Grouped by Date */}
         <div className="glass-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.125rem', fontWeight: '600' }}>Recent Leads</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '6px',
+                background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <FileText size={18} color="white" />
+              </div>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600' }}>Leads Database (Sheet View)</h3>
+            </div>
             <Link href="/client/leads" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
-              <Upload size={16} /> Upload Leads
+              <Upload size={16} /> Manage Leads
             </Link>
           </div>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Company</th>
-                  <th>Status</th>
-                  <th>Calls</th>
-                </tr>
-              </thead>
-              <tbody>
-                {client.leads.length === 0 ? (
-                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--muted-foreground))' }}>
-                    No leads uploaded yet. <Link href="/client/leads" style={{ color: 'hsl(var(--primary))' }}>Upload your first leads</Link>
-                  </td></tr>
-                ) : client.leads.slice(0, 10).map(lead => (
-                  <tr key={lead.id}>
-                    <td style={{ fontWeight: '500' }}>{lead.name}</td>
-                    <td style={{ color: 'hsl(var(--muted-foreground))', fontFamily: 'monospace' }}>{lead.phone}</td>
-                    <td style={{ color: 'hsl(var(--muted-foreground))' }}>{lead.company || '—'}</td>
-                    <td>
-                      <span className={`status-badge status-${lead.status}`}>
-                        {lead.status}
-                        {lead.status === 'rejected' && lead.rejectReason && (
-                          <span title={lead.rejectReason}> ⓘ</span>
-                        )}
+
+          {client.leads.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'hsl(var(--muted-foreground))', border: '1px dashed hsl(var(--border))', borderRadius: 'var(--radius)' }}>
+              No leads uploaded yet. <Link href="/client/leads" style={{ color: 'hsl(var(--primary))' }}>Upload your first leads</Link>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {Object.entries(
+                client.leads.reduce((groups, lead) => {
+                  const date = new Date(lead.createdAt).toLocaleDateString(undefined, {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                  });
+                  if (!groups[date]) groups[date] = [];
+                  groups[date].push(lead);
+                  return groups;
+                }, {} as { [date: string]: Lead[] })
+              ).map(([date, leads], idx) => (
+                <details key={date} open={idx === 0} className="sheet-group" style={{ 
+                  border: '1px solid rgba(255,255,255,0.05)', 
+                  borderRadius: 'var(--radius)',
+                  overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.02)'
+                }}>
+                  <summary style={{ 
+                    padding: '1rem', 
+                    cursor: 'pointer', 
+                    listStyle: 'none', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    background: 'rgba(255,255,255,0.03)',
+                    fontWeight: '600'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <span style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem' }}>📅 Uploaded on:</span>
+                      <span>{date}</span>
+                      <span className="status-badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', border: 'none' }}>
+                        {leads.length} Leads
                       </span>
-                    </td>
-                    <td style={{ color: 'hsl(var(--muted-foreground))' }}>
-                      {lead.calls.length > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <CheckCircle size={14} color="#10b981" />
-                          {lead.calls.length}
-                        </div>
-                      ) : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Click to expand</span>
+                  </summary>
+                  
+                  <div className="table-container" style={{ margin: '0' }}>
+                    <table style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <thead>
+                        <tr>
+                          <th>Lead Name</th>
+                          <th>Phone Number</th>
+                          <th>Company</th>
+                          <th>Status</th>
+                          <th>Last Activity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leads.map(lead => (
+                          <tr key={lead.id}>
+                            <td style={{ fontWeight: '500' }}>{lead.name}</td>
+                            <td style={{ color: 'hsl(var(--muted-foreground))', fontFamily: 'monospace' }}>{lead.phone}</td>
+                            <td style={{ color: 'hsl(var(--muted-foreground))' }}>{lead.company || '—'}</td>
+                            <td>
+                              <span className={`status-badge status-${lead.status}`}>
+                                {lead.status}
+                              </span>
+                            </td>
+                            <td style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem' }}>
+                              {lead.calls.length > 0 ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <Clock size={12} />
+                                  {new Date(lead.calls[0].createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
+                              ) : 'Not Called Yet'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
