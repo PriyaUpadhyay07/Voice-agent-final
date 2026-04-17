@@ -14,14 +14,5 @@ export async function GET() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // Background Sync
-  for (const lead of leads) {
-    for (const call of lead.calls) {
-      if (call.status === 'completed' && !call.transcript) {
-        syncCallTranscript(call.id).catch(console.error);
-      }
-    }
-  }
-
   return NextResponse.json(leads);
 }
