@@ -73,20 +73,11 @@ export async function POST(request: NextRequest) {
 
     try {
       const agentId = process.env.ELEVENLABS_AGENT_ID || '';
-      const apiKey = process.env.ELEVENLABS_API_KEY || '';
 
-      const dynamicVars: Record<string, string> = {
-        lead_name: lead.name || 'Client',
-        lead_phone: lead.phone || '',
-        call_record_id: callRecord.id,
-      };
-
-      if (lead.user.script) {
-        dynamicVars.calling_script = lead.user.script;
-      }
-
-      const encodedVars = encodeURIComponent(JSON.stringify(dynamicVars));
-      const elevenLabsUrl = `https://api.elevenlabs.io/v1/convai/twilio/outbound?agent_id=${agentId}&dynamic_variables=${encodedVars}&xi-api-key=${apiKey}`;
+      // Use our own TwiML endpoint that connects to ElevenLabs WebSocket
+      const host = request.headers.get('host') || 'voice-agent-jbl4.vercel.app';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const twimlUrl = `${protocol}://${host}/api/twiml?agent_id=${agentId}`;
 
       let formattedPhone = formatPhoneNumber(lead.phone);
       const provider = (process.env.CALL_PROVIDER || 'signalwire').toLowerCase();
@@ -110,7 +101,7 @@ export async function POST(request: NextRequest) {
           body: new URLSearchParams({
             From: process.env.SIGNALWIRE_PHONE_NUMBER!,
             To: formattedPhone,
-            Url: elevenLabsUrl,
+            Url: twimlUrl,
           }),
         });
 
