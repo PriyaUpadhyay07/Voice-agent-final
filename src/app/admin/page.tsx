@@ -6,14 +6,15 @@ import { auth, signOut } from '@/auth';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  const session = await auth();
-  const clients = await prisma.user.findMany({ where: { role: 'client' } });
-  const allLeads = await prisma.lead.findMany();
-  const allCalls = await prisma.call.findMany();
+  try {
+    const session = await auth();
+    const clients = await prisma.user.findMany({ where: { role: 'client' } });
+    const allLeads = await prisma.lead.findMany();
+    const allCalls = await prisma.call.findMany();
 
-  const totalRevenue = clients.reduce((sum, c) => sum + (c.walletAmount || 0), 0);
-  const totalCalls = allCalls.length;
-  const pendingLeads = allLeads.filter(l => l.status === 'pending').length;
+    const totalRevenue = clients.reduce((sum, c) => sum + (c.walletAmount || 0), 0);
+    const totalCalls = allCalls.length;
+    const pendingLeads = allLeads.filter(l => l.status === 'pending').length;
 
   return (
     <div style={{ minHeight: '100vh', padding: '0' }}>
@@ -148,4 +149,20 @@ export default async function AdminDashboard() {
       </div>
     </div>
   );
+  } catch (error: any) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+        <div className="glass-card" style={{ maxWidth: '500px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+          <h2 style={{ color: '#f87171', marginBottom: '1rem' }}>Dashboard Error</h2>
+          <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '1.5rem' }}>
+            There was an error loading the admin dashboard. This is usually due to a database connection issue or missing environment variables.
+          </p>
+          <pre style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius)', fontSize: '0.8rem', overflowX: 'auto', marginBottom: '1.5rem', textAlign: 'left' }}>
+            {error.message || 'Unknown Server Error'}
+          </pre>
+          <Link href="/" className="btn-primary">Back to Home</Link>
+        </div>
+      </div>
+    );
+  }
 }
