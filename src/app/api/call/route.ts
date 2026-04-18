@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
         const call = await twilioClient.calls.create({
           from: process.env.TWILIO_PHONE_NUMBER!,
           to: formattedPhone,
-          url: elevenLabsUrl,
+          url: twimlUrl,
           method: 'POST',
         });
         callSid = call.sid;
