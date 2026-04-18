@@ -1,23 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Returns TwiML/cXML that tells SignalWire to bridge the call 
-// to ElevenLabs AI agent via SIP
+// Returns TwiML/cXML that tells SignalWire to bridge the call
+// to ElevenLabs AI agent via SIP.
+//
+// How it works:
+// 1. SignalWire calls the lead's phone number
+// 2. Lead picks up → SignalWire fetches this TwiML
+// 3. TwiML tells SignalWire to <Dial><Sip> to ElevenLabs' SIP server
+// 4. ElevenLabs receives the SIP INVITE, matches the phone number
+//    to the registered number, and routes to the assigned AI agent
+// 5. Agent speaks with the lead
+//
+// Per ElevenLabs docs:
+// - SIP URI: sip:+PHONE@sip.rtc.elevenlabs.io:5060
+// - UDP is NOT supported, must use transport=tcp
+// - Phone number must match exactly (with + prefix)
 export async function POST(request: NextRequest) {
-  const agentId = request.nextUrl.searchParams.get('agent_id') || process.env.ELEVENLABS_AGENT_ID || '';
-  
-  // Strip 'agent_' prefix if present (ElevenLabs WebSocket expects the raw ID)
-  const idOnly = agentId.replace('agent_', '');
+  // The ElevenLabs-registered phone number (must match exactly what's in ElevenLabs dashboard)
+  const phoneNumber = process.env.SIGNALWIRE_PHONE_NUMBER || '+12063393710';
 
-  // Use ElevenLabs WebSocket Stream for Twilio/SignalWire (with platform=twilio)
-  // We use &amp; because this is going into an XML attribute
-  const streamUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${idOnly}&amp;platform=twilio`;
+  // Build the correct SIP URI per ElevenLabs documentation
+  // Format: sip:+12063393710@sip.rtc.elevenlabs.io:5060;transport=tcp
+  const sipUri = `sip:${phoneNumber}@sip.rtc.elevenlabs.io:5060;transport=tcp`;
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Connect>
-    <Stream url="${streamUrl}" />
-  </Connect>
+  <Dial>
+    <Sip>${sipUri}</Sip>
+  </Dial>
 </Response>`;
+
+  console.log('[TwiML] Generated SIP URI:', sipUri);
 
   return new NextResponse(twiml, {
     status: 200,
