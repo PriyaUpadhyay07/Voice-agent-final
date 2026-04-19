@@ -1,25 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Returns TwiML/cXML that tells SignalWire to bridge the call
-// to ElevenLabs AI agent via SIP.
 export async function POST(request: NextRequest) {
-  // Use the phone number as the primary identifier
-  const phoneNumber = process.env.SIGNALWIRE_PHONE_NUMBER || '+12063393710';
+  // Use the Agent ID directly as the identifier in the SIP URI
+  // Sometimes phone numbers fail to match, but Agent ID is unique and absolute.
+  const agentId = process.env.ELEVENLABS_AGENT_ID || 'agent_8601knrwbp57ebnvzwkcd8eqwqys';
   
-  // We use TCP on Port 5060 because it's the most compatible with SignalWire and what worked previously
-  // Format: sip:IDENTIFIER@sip.rtc.elevenlabs.io:5060;transport=tcp
-  const sipUri = `sip:${phoneNumber}@sip.rtc.elevenlabs.io:5060;transport=tcp`;
+  // Try calling the Agent ID directly instead of the phone number
+  const sipUri = `sip:${agentId}@sip.rtc.elevenlabs.io:5060;transport=tcp`;
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial timeout="45">
+  <Say>Please wait while we connect you to our agent.</Say>
+  <Dial timeout="30">
     <Sip>${sipUri}</Sip>
   </Dial>
-  <Say>Connecting you to the AI agent. Please hold.</Say>
 </Response>`;
 
-  console.log('[TwiML] Root Audit - Using TCP 5060 for reliability.');
-  console.log('[TwiML] SIP URI:', sipUri);
+  console.log('[TwiML] Using Agent ID as SIP Identifier:', agentId);
 
   return new NextResponse(twiml, {
     status: 200,
