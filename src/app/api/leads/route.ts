@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   const session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
 
   const body = await request.json();
-  const { userId: bodyUserId, leads: bulkLeads, phone, name, company, action, status: resetStatus } = body;
+  const { userId: bodyUserId, leads: bulkLeads, phone, name, company, batchId, action, status: resetStatus } = body;
   
   const userRole = (session.user as any).role;
   let targetUserId = (session.user as any).id;
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   // Handle Bulk Reset Action
   if (action === 'bulk_reset' && resetStatus) {
     const updated = await prisma.lead.updateMany({
-      where: { userId: targetUserId },
+      where: { userId: targetUserId, batchId: batchId || undefined },
       data: { status: resetStatus },
     });
     return NextResponse.json({ count: updated.count, status: resetStatus });
@@ -56,6 +56,7 @@ export async function POST(request: NextRequest) {
         phone: l.phone,
         name: l.name,
         company: l.company || null,
+        batchId: batchId || null,
         status: 'pending',
       })),
     });
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
   }
 
   const lead = await prisma.lead.create({
-    data: { userId: targetUserId, phone, name, company: company || null, status: 'pending' },
+    data: { userId: targetUserId, phone, name, company: company || null, batchId: batchId || null, status: 'pending' },
   });
 
   return NextResponse.json(lead, { status: 201 });

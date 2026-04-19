@@ -24,6 +24,7 @@ type Lead = {
   rejectReason: string | null;
   createdAt: string;
   calls: Call[];
+  batchId: string | null;
   user?: { name: string; email: string };
 };
 
@@ -31,6 +32,7 @@ type Client = {
   id: string;
   name: string;
   email: string;
+  script: string | null;
 };
 
 export default function AdminLeadsPage() {
@@ -46,6 +48,15 @@ export default function AdminLeadsPage() {
   const [addFormData, setAddFormData] = useState({ userId: '', name: '', phone: '', company: '' });
   const [addLoading, setAddLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending'>('all');
+
+  // Batch management
+  const [selectedBatch, setSelectedBatch] = useState<string>('all');
+  const [batches, setBatches] = useState<string[]>([]);
+  
+  // Script management
+  const [clientScript, setClientScript] = useState('');
+  const [scriptSaving, setScriptSaving] = useState(false);
 
   // Transcript modal
   const [selectedTranscript, setSelectedTranscript] = useState<{
@@ -68,8 +79,15 @@ export default function AdminLeadsPage() {
       ]);
       setLeads(leadsData);
       setClients(clientsData);
+      
+      // Extract unique batches
+      const uniqueBatches = Array.from(new Set(leadsData.map((l: any) => l.batchId).filter(Boolean))) as string[];
+      setBatches(uniqueBatches);
+
       if (clientsData.length > 0 && !addFormData.userId) {
-        setAddFormData(prev => ({ ...prev, userId: clientsData[0].id }));
+        const firstClient = clientsData[0];
+        setAddFormData(prev => ({ ...prev, userId: firstClient.id }));
+        setClientScript(firstClient.script || '');
       }
     } catch (e: any) {
       setError(e.message || 'Failed to fetch data. Please check your tunnel/connection.');
@@ -83,7 +101,11 @@ export default function AdminLeadsPage() {
       alert('Please select a client to reset leads for.');
       return;
     }
-    if (!confirm('This will reset ALL leads for this client back to "pending". Continue?')) return;
+    const msg = selectedBatch !== 'all' 
+      ? `This will reset ALL leads in batch "${selectedBatch}" for this client back to "pending". Continue?`
+      : 'This will reset ALL leads for this client back to "pending". Continue?';
+      
+    if (!confirm(msg)) return;
     
     setLoading(true);
     try {
@@ -93,15 +115,39 @@ export default function AdminLeadsPage() {
         body: JSON.stringify({ 
           userId: addFormData.userId, 
           action: 'bulk_reset',
+          batchId: selectedBatch !== 'all' ? selectedBatch : undefined,
           status: 'pending' 
         }),
       });
       await fetchData();
-      alert('✅ All leads for this client have been reset to pending!');
+      alert('✅ Leads have been reset to pending!');
     } catch (e: any) {
       alert(e.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function saveScript() {
+    if (!addFormData.userId) return;
+    setScriptSaving(true);
+    try {
+      const res = await fetch(`/api/clients/${addFormData.userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ script: clientScript }),
+      });
+      if (res.ok) {
+        alert('✅ Script saved successfully!');
+        // Update client list local state
+        setClients(prev => prev.map(c => c.id === addFormData.userId ? { ...c, script: clientScript } : c));
+      } else {
+        alert('Failed to save script');
+      }
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setScriptSaving(false);
     }
   }
 
@@ -150,15 +196,21 @@ export default function AdminLeadsPage() {
       return;
     }
 
+    const batchName = file.name.replace('.csv', '') + '_' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const res = await fetch('/api/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: addFormData.userId, leads: leadsToAdd }),
+      body: JSON.stringify({ 
+        userId: addFormData.userId, 
+        leads: leadsToAdd,
+        batchId: batchName
+      }),
     });
 
     if (res.ok) {
       const data = await res.json();
-      alert(`✅ ${data.count} leads uploaded successfully!`);
+      alert(`✅ ${data.count} leads uploaded successfully to batch: ${batchName}!`);
       await fetchData();
     } else {
       alert('Failed to upload CSV');
@@ -239,10 +291,19 @@ export default function AdminLeadsPage() {
   }
 
   async function runAllCalls() {
-    // Filter out SIP addresses - only call real phone numbers
-    const leadsToCall = leads.filter(l => !l.phone.includes('@'));
+    // Filter by status AND batch if selected
+    let leadsToCall = leads.filter(l => !l.phone.includes('@'));
+    
+    if (filter !== 'all') {
+      leadsToCall = leadsToCall.filter(l => l.status === filter);
+    }
+    
+    if (selectedBatch !== 'all') {
+      leadsToCall = leadsToCall.filter(l => l.batchId === selectedBatch);
+    }
+
     if (leadsToCall.length === 0) {
-      alert("No callable leads. SIP addresses are skipped.");
+      alert("No callable leads found matching your filters.");
       return;
     }
     
@@ -282,7 +343,8 @@ export default function AdminLeadsPage() {
   }
 
 
-  const filtered = filter === 'all' ? leads : leads.filter(l => l.status === filter);
+  const filteredByStatus = filter === 'all' ? leads : leads.filter(l => l.status === filter);
+  const filtered = selectedBatch === 'all' ? filteredByStatus : filteredByStatus.filter(l => l.batchId === selectedBatch);
 
   const statusCounts = {
     all: leads.length,
@@ -341,10 +403,87 @@ export default function AdminLeadsPage() {
             <button onClick={runAllCalls} className="btn-primary" style={{ background: '#ec4899', borderColor: '#ec4899' }}>
               <Phone size={18} /> Run Agent on All
             </button>
+            <button 
+              onClick={() => {
+                setFilter('pending');
+                setTimeout(() => runAllCalls(), 100);
+              }} 
+              className="btn-outline" 
+              style={{ color: '#f59e0b', borderColor: 'rgba(245,158,11,0.3)' }}
+            >
+              <Clock size={18} /> Recall All Pending
+            </button>
             <button onClick={() => setShowAddForm(!showAddForm)} className="btn-primary">
               <Plus size={18} /> Add Lead
             </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleCSVUpload}
+              accept=".csv"
+              style={{ display: 'none' }}
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()} 
+              className="btn-outline" 
+              style={{ color: '#60a5fa', borderColor: 'rgba(96,165,250,0.3)' }}
+              disabled={addLoading}
+            >
+              <Upload size={18} /> {addLoading ? 'Uploading...' : 'Upload CSV'}
+            </button>
           </div>
+        </div>
+
+        {/* Script Editor Section */}
+        <div className="glass-card animate-fade-in" style={{ marginBottom: '2rem', borderLeft: '4px solid #6366f1' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <h3 style={{ fontWeight: '600', fontSize: '1.1rem' }}>🤖 AI Agent Script</h3>
+              <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem' }}>Write the instructions/script the AI agent should follow for this client.</p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <select
+                value={addFormData.userId}
+                onChange={e => {
+                  const client = clients.find(c => c.id === e.target.value);
+                  setAddFormData({ ...addFormData, userId: e.target.value });
+                  if (client) setClientScript(client.script || '');
+                }}
+                style={{ width: 'auto', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))' }}
+              >
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <button 
+                onClick={saveScript} 
+                className="btn-primary" 
+                disabled={scriptSaving}
+                style={{ background: '#6366f1' }}
+              >
+                {scriptSaving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : 'Update Script'}
+              </button>
+            </div>
+          </div>
+          <textarea
+            value={clientScript}
+            onChange={e => setClientScript(e.target.value)}
+            placeholder="Example: Hello, I am Jesscia from ABC Corp. I am calling to tell you about our new marketing services..."
+            style={{
+              width: '100%',
+              minHeight: '120px',
+              padding: '1rem',
+              borderRadius: 'var(--radius)',
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid hsla(var(--border), 0.5)',
+              color: 'inherit',
+              fontFamily: 'inherit',
+              fontSize: '0.95rem',
+              lineHeight: '1.6',
+              outline: 'none',
+              resize: 'vertical'
+            }}
+          />
         </div>
 
         {error && (
@@ -465,28 +604,98 @@ export default function AdminLeadsPage() {
           </div>
         )}
 
-        {/* Filter Tabs */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-          {Object.entries(statusCounts).map(([key, count]) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '9999px',
-                border: filter === key ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border))',
-                background: filter === key ? 'hsla(var(--primary), 0.15)' : 'transparent',
-                color: filter === key ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
-                cursor: 'pointer',
-                fontSize: '0.85rem',
-                fontWeight: '500',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {key.charAt(0).toUpperCase() + key.slice(1)} ({count})
-            </button>
-          ))}
+        {/* Tab System */}
+        <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid hsl(var(--border))', marginBottom: '2rem' }}>
+          <button 
+            onClick={() => { setActiveTab('all'); setFilter('all'); }}
+            style={{ 
+              padding: '1rem 0.5rem', background: 'none', border: 'none', 
+              borderBottom: activeTab === 'all' ? '2px solid #5b6efe' : 'none',
+              color: activeTab === 'all' ? '#5b6efe' : 'hsl(var(--muted-foreground))',
+              fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
+            }}
+          >
+            All Leads & Uploads
+          </button>
+          <button 
+            onClick={() => { setActiveTab('pending'); setFilter('pending'); }}
+            style={{ 
+              padding: '1rem 0.5rem', background: 'none', border: 'none', 
+              borderBottom: activeTab === 'pending' ? '2px solid #f59e0b' : 'none',
+              color: activeTab === 'pending' ? '#f59e0b' : 'hsl(var(--muted-foreground))',
+              fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', gap: '0.5rem'
+            }}
+          >
+            Pending Follow-up <span style={{ background: '#f59e0b', color: 'black', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem' }}>{statusCounts.pending}</span>
+          </button>
         </div>
+
+        {activeTab === 'all' && (
+          <div className="animate-fade-in">
+            {/* Filter Tabs */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              {Object.entries(statusCounts).map(([key, count]) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '9999px',
+                    border: filter === key ? '1px solid hsl(var(--primary))' : '1px solid hsl(var(--border))',
+                    background: filter === key ? 'hsla(var(--primary), 0.15)' : 'transparent',
+                    color: filter === key ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {key.charAt(0).toUpperCase() + key.slice(1)} ({count})
+                </button>
+              ))}
+            </div>
+            
+            {/* Batch Selector */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>Filter by Script/Sheet:</span>
+                <select
+                  value={selectedBatch}
+                  onChange={e => setSelectedBatch(e.target.value)}
+                  style={{ width: 'auto', minWidth: '200px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))', fontSize: '0.85rem' }}
+                >
+                  <option value="all">All Uploads (Mixed)</option>
+                  {batches.map(batch => (
+                    <option key={batch} value={batch}>{batch}</option>
+                  ))}
+                </select>
+                {selectedBatch !== 'all' && (
+                  <Link href={`/admin/leads/view?batch=${encodeURIComponent(selectedBatch)}`} target="_blank" className="btn-outline" style={{ padding: '0.3rem 0.75rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Eye size={14} /> Full Sheet View
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'pending' && (
+          <div className="animate-fade-in" style={{ padding: '1.5rem', background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.1)', borderRadius: 'var(--radius)', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h3 style={{ fontWeight: '700', color: '#f59e0b', marginBottom: '0.25rem' }}>Pending Follow-ups Pool</h3>
+              <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem' }}>These leads are busy or asked for a callback. Ready to retry?</p>
+            </div>
+            <button 
+              onClick={() => runAllCalls()} 
+              className="btn-primary" 
+              style={{ background: '#f59e0b', border: 'none', color: 'black', fontWeight: '700' }}
+              disabled={statusCounts.pending === 0}
+            >
+              <Phone size={18} /> Recall All {statusCounts.pending} Pending Leads
+            </button>
+          </div>
+        )}
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '4rem' }}>
@@ -500,6 +709,7 @@ export default function AdminLeadsPage() {
                   <tr>
                     <th>Lead Name</th>
                     <th>Phone</th>
+                    <th>Batch/Sheet</th>
                     <th>Company</th>
                     <th>Client</th>
                     <th>Status</th>
@@ -514,6 +724,7 @@ export default function AdminLeadsPage() {
                     <tr key={lead.id}>
                       <td style={{ fontWeight: '500' }}>{lead.name}</td>
                       <td style={{ color: 'hsl(var(--muted-foreground))', fontFamily: 'monospace' }}>{lead.phone}</td>
+                      <td style={{ fontSize: '0.75rem', color: '#6366f1' }}>{lead.batchId || 'Manual'}</td>
                       <td style={{ color: 'hsl(var(--muted-foreground))' }}>{lead.company || '—'}</td>
                       <td style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))' }}>
                         {lead.user?.name || 'Unknown'}

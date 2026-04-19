@@ -70,6 +70,7 @@ model Lead {
   rejectReason String?
   scheduledAt  DateTime?
   timezone     String?
+  batchId      String?   // Group leads together by upload/sheet
   createdAt    DateTime  @default(now())
   calls        Call[]
   user         User      @relation(fields: [userId], references: [id])

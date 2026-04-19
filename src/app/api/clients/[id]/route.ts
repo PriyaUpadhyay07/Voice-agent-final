@@ -71,12 +71,13 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { walletAmount, name, email } = body;
+  const { walletAmount, name, email, script } = body;
 
   const data: Record<string, unknown> = {};
   if (walletAmount !== undefined) data.walletAmount = Number(walletAmount);
   if (name) data.name = name;
   if (email) data.email = email;
+  if (script !== undefined) data.script = script;
 
   const client = await prisma.user.update({ where: { id }, data });
   return NextResponse.json(client);

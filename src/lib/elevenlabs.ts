@@ -57,11 +57,33 @@ export async function syncAllTranscripts() {
             .map((m: any) => `${m.role === 'agent' ? 'Agent' : 'User'}: ${m.message}`)
             .join('\n\n');
 
+          // Smart Status Tagging Logic
+          let newStatus = 'approved'; // Default to approved if we are unsure (or keep current)
+          const lowerTranscript = transcriptText.toLowerCase();
+
+          const rejectKeywords = ['not interested', 'no thanks', 'don\'t call', 'stop calling', 'wrong number', 'not the right time', 'reject', 'no interest'];
+          const pendingKeywords = ['call back', 'busy now', 'later', 'tomorrow', 'next week', 'meeting', 'driving', 'send me an email'];
+          const approveKeywords = ['interested', 'send more info', 'sounds good', 'yes', 'tell me more', 'agreed', 'approve'];
+
+          if (rejectKeywords.some(k => lowerTranscript.includes(k))) {
+            newStatus = 'rejected';
+          } else if (pendingKeywords.some(k => lowerTranscript.includes(k))) {
+            newStatus = 'pending';
+          } else if (approveKeywords.some(k => lowerTranscript.includes(k))) {
+            newStatus = 'approved';
+          }
+
           await prisma.call.update({
             where: { id: callRecordId },
             data: { transcript: transcriptText },
           });
-          console.log(`Auto-synced transcript for call ${callRecordId}`);
+
+          await prisma.lead.update({
+            where: { id: matchingCall.leadId },
+            data: { status: newStatus },
+          });
+
+          console.log(`Auto-synced transcript and set status to ${newStatus} for lead ${matchingCall.leadId}`);
         }
       }
     }
@@ -89,4 +111,23 @@ export async function syncCallTranscript(callRecordId: string) {
     console.error('Error syncing single call transcript:', error);
   }
   return null;
+}
+
+export async function getElevenLabsBalance() {
+  if (!API_KEY) return null;
+  try {
+    const response = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+      headers: { 'xi-api-key': API_KEY }
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return {
+      characterCount: data.character_count,
+      characterLimit: data.character_limit,
+      remaining: data.character_limit - data.character_count,
+    };
+  } catch (error) {
+    console.error('Error fetching ElevenLabs balance:', error);
+    return null;
+  }
 }

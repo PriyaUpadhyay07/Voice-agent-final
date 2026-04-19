@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import prisma from '../../lib/db';
-import { Users, PhoneCall, DollarSign, Activity, LogOut } from 'lucide-react';
+import { Users, PhoneCall, DollarSign, Activity, LogOut, CheckCircle, XCircle, Clock, Zap } from 'lucide-react';
 import { auth, signOut } from '@/auth';
+import { getElevenLabsBalance } from '@/lib/elevenlabs';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +12,13 @@ export default async function AdminDashboard() {
     const clients = await prisma.user.findMany({ where: { role: 'client' } });
     const allLeads = await prisma.lead.findMany();
     const allCalls = await prisma.call.findMany();
+    const elBalance = await getElevenLabsBalance();
 
     const totalRevenue = clients.reduce((sum, c) => sum + (c.walletAmount || 0), 0);
     const totalCalls = allCalls.length;
-    const pendingLeads = allLeads.filter(l => l.status === 'pending').length;
+    const pendingLeadsCount = allLeads.filter(l => l.status === 'pending').length;
+    const approvedLeadsCount = allLeads.filter(l => l.status === 'approved').length;
+    const rejectedLeadsCount = allLeads.filter(l => l.status === 'rejected').length;
 
   return (
     <div style={{ minHeight: '100vh', padding: '0' }}>
@@ -63,40 +67,75 @@ export default async function AdminDashboard() {
 
           {/* Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-            <div className="glass-card animate-fade-in">
+            <div className="glass-card animate-fade-in" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%)', borderLeft: '4px solid #3b82f6' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'hsl(var(--muted-foreground))', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.875rem' }}>Total Clients</span>
-                <Users size={18} />
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', letterSpacing: '0.02em' }}>TOTAL CLIENTS</span>
+                <Users size={18} style={{ color: '#3b82f6' }} />
               </div>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: '700' }}>{clients.length}</h2>
-              <span style={{ color: '#34d399', fontSize: '0.8rem' }}>Active accounts</span>
+              <h2 style={{ fontSize: '2.75rem', fontWeight: '800', letterSpacing: '-0.02em' }}>{clients.length}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
+                <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: '500' }}>System Online</span>
+              </div>
             </div>
 
-            <div className="glass-card animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <div className="glass-card animate-fade-in" style={{ animationDelay: '0.1s', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)', borderLeft: '4px solid #10b981' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'hsl(var(--muted-foreground))', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.875rem' }}>Wallet Balances Total</span>
-                <DollarSign size={18} />
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', letterSpacing: '0.02em' }}>TOTAL REVENUE</span>
+                <DollarSign size={18} style={{ color: '#10b981' }} />
               </div>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: '700' }}>${totalRevenue.toFixed(2)}</h2>
-              <span style={{ color: '#60a5fa', fontSize: '0.8rem' }}>Loaded across clients</span>
+              <h2 style={{ fontSize: '2.75rem', fontWeight: '800', letterSpacing: '-0.02em' }}>${totalRevenue.toFixed(2)}</h2>
+              <span style={{ color: '#60a5fa', fontSize: '0.75rem', fontWeight: '500', opacity: 0.8 }}>Across all accounts</span>
             </div>
 
-            <div className="glass-card animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="glass-card animate-fade-in" style={{ animationDelay: '0.2s', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%)', borderLeft: '4px solid #8b5cf6' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'hsl(var(--muted-foreground))', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.875rem' }}>Total Calls Made</span>
-                <PhoneCall size={18} />
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', letterSpacing: '0.02em' }}>TOTAL CALLS</span>
+                <PhoneCall size={18} style={{ color: '#8b5cf6' }} />
               </div>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: '700' }}>{totalCalls}</h2>
-              <span style={{ color: '#a78bfa', fontSize: '0.8rem' }}>All time</span>
+              <h2 style={{ fontSize: '2.75rem', fontWeight: '800', letterSpacing: '-0.02em' }}>{totalCalls}</h2>
+              <span style={{ color: '#a78bfa', fontSize: '0.75rem', fontWeight: '500', opacity: 0.8 }}>All-time successful</span>
             </div>
 
-            <div className="glass-card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="glass-card animate-fade-in" style={{ animationDelay: '0.3s', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.05) 100%)', borderLeft: '4px solid #f59e0b' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'hsl(var(--muted-foreground))', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.875rem' }}>Pending Leads</span>
-                <Activity size={18} />
+                <span style={{ fontSize: '0.875rem', fontWeight: '600', letterSpacing: '0.02em' }}>AI AGENT CREDITS</span>
+                <Zap size={18} style={{ color: '#f59e0b' }} />
               </div>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: '700' }}>{pendingLeads}</h2>
-              <span style={{ color: '#fbbf24', fontSize: '0.8rem' }}>Awaiting calls</span>
+              <h2 style={{ fontSize: '2.75rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
+                {elBalance ? (elBalance.remaining / 1000).toFixed(1) + 'k' : '—'}
+              </h2>
+              <span style={{ color: '#fbbf24', fontSize: '0.75rem', fontWeight: '500', opacity: 0.8 }}>Characters available</span>
+            </div>
+          </div>
+
+          {/* Detailed Status Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            <div className="glass-card" style={{ background: 'hsla(142, 70%, 45%, 0.05)', border: '1px solid hsla(142, 70%, 45%, 0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#10b981' }}>
+                <CheckCircle size={20} />
+                <h3 style={{ fontWeight: '600' }}>Approved Leads</h3>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '700' }}>{approvedLeadsCount}</div>
+              <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))', marginTop: '0.5rem' }}>Ready for service</p>
+            </div>
+
+            <div className="glass-card" style={{ background: 'hsla(0, 72%, 51%, 0.05)', border: '1px solid hsla(0, 72%, 51%, 0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#ef4444' }}>
+                <XCircle size={20} />
+                <h3 style={{ fontWeight: '600' }}>Rejected Leads</h3>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '700' }}>{rejectedLeadsCount}</div>
+              <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))', marginTop: '0.5rem' }}>Not interested</p>
+            </div>
+
+            <div className="glass-card" style={{ background: 'hsla(45, 93%, 47%, 0.05)', border: '1px solid hsla(45, 93%, 47%, 0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#f59e0b' }}>
+                <Clock size={20} />
+                <h3 style={{ fontWeight: '600' }}>Pending Leads</h3>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '700' }}>{pendingLeadsCount}</div>
+              <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))', marginTop: '0.5rem' }}>Awaiting callbacks / Busy</p>
             </div>
           </div>
 
