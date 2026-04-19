@@ -79,14 +79,8 @@ export async function POST(request: NextRequest) {
     try {
       const agentId = process.env.ELEVENLABS_AGENT_ID || '';
 
-      // Use our own TwiML endpoint that connects to ElevenLabs WebSocket
-      // Use TUNNEL_URL env var for local dev (SignalWire can't reach localhost)
-      const tunnelUrl = process.env.TUNNEL_URL;
-      const host = request.headers.get('host') || 'voice-agent-jbl4.vercel.app';
-      const protocol = host.includes('localhost') ? 'http' : 'https';
-      const twimlUrl = tunnelUrl 
-        ? `${tunnelUrl}/api/twiml?agent_id=${agentId}`
-        : `${protocol}://${host}/api/twiml?agent_id=${agentId}`;
+      // FORCE Vercel URL so SignalWire can ALWAYS reach it (localhost won't work)
+      const twimlUrl = `https://voice-agent-jbl4.vercel.app/api/twiml?agent_id=${agentId}`;
 
       let formattedPhone = formatPhoneNumber(lead.phone);
       const provider = (process.env.CALL_PROVIDER || 'signalwire').toLowerCase();
