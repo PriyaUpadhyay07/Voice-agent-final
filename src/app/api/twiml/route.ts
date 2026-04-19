@@ -21,9 +21,8 @@ export async function POST(request: NextRequest) {
   // The ElevenLabs-registered phone number (must match exactly what's in ElevenLabs dashboard)
   const phoneNumber = process.env.SIGNALWIRE_PHONE_NUMBER || '+12063393710';
 
-  // Use TCP transport on port 5060 — most compatible, matches ElevenLabs docs default
-  // ElevenLabs inbound trunk accepts from 0.0.0.0/0 with media_encryption=allowed
-  const sipUri = `sip:${phoneNumber}@sip.rtc.elevenlabs.io:5060;transport=tcp`;
+  // Removing port :5060/5061 to let ElevenLabs handle it automatically
+  const sipUri = `sip:${phoneNumber}@sip.rtc.elevenlabs.io;transport=tls`;
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
