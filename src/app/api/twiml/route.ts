@@ -11,23 +11,23 @@ import { NextRequest, NextResponse } from 'next/server';
 //    to the registered number, and routes to the assigned AI agent
 // 5. Agent speaks with the lead
 //
-// Per ElevenLabs docs:
-// - SIP URI: sip:+PHONE@sip.rtc.elevenlabs.io:5060
-// - UDP is NOT supported, must use transport=tcp
+// Per ElevenLabs SIP trunk config:
+// - SIP URI: sip:+PHONE@sip.rtc.elevenlabs.io
+// - Transport must match trunk config (tls)
 // - Phone number must match exactly (with + prefix)
 export async function POST(request: NextRequest) {
   // The ElevenLabs-registered phone number (must match exactly what's in ElevenLabs dashboard)
   const phoneNumber = process.env.SIGNALWIRE_PHONE_NUMBER || '+12063393710';
 
-  // Build the correct SIP URI per ElevenLabs documentation
-  // Format: sip:+12063393710@sip.rtc.elevenlabs.io:5060;transport=tcp
-  const sipUri = `sip:${phoneNumber}@sip.rtc.elevenlabs.io:5060;transport=tcp`;
+  // Build the correct SIP URI — transport=tls matches ElevenLabs trunk config
+  const sipUri = `sip:${phoneNumber}@sip.rtc.elevenlabs.io;transport=tls`;
 
   const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial>
+  <Dial timeout="120">
     <Sip>${sipUri}</Sip>
   </Dial>
+  <Say>The AI agent could not be reached. Please try again later.</Say>
 </Response>`;
 
   console.log('[TwiML] Generated SIP URI:', sipUri);
