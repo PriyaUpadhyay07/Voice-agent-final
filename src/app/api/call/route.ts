@@ -80,9 +80,13 @@ export async function POST(request: NextRequest) {
       const agentId = process.env.ELEVENLABS_AGENT_ID || '';
 
       // Use our own TwiML endpoint that connects to ElevenLabs WebSocket
+      // Use TUNNEL_URL env var for local dev (SignalWire can't reach localhost)
+      const tunnelUrl = process.env.TUNNEL_URL;
       const host = request.headers.get('host') || 'voice-agent-jbl4.vercel.app';
       const protocol = host.includes('localhost') ? 'http' : 'https';
-      const twimlUrl = `${protocol}://${host}/api/twiml?agent_id=${agentId}`;
+      const twimlUrl = tunnelUrl 
+        ? `${tunnelUrl}/api/twiml?agent_id=${agentId}`
+        : `${protocol}://${host}/api/twiml?agent_id=${agentId}`;
 
       let formattedPhone = formatPhoneNumber(lead.phone);
       const provider = (process.env.CALL_PROVIDER || 'signalwire').toLowerCase();
