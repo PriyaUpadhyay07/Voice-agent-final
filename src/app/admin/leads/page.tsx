@@ -96,37 +96,6 @@ export default function AdminLeadsPage() {
     }
   }
 
-  async function bulkResetStatus() {
-    if (!addFormData.userId) {
-      alert('Please select a client to reset leads for.');
-      return;
-    }
-    const msg = selectedBatch !== 'all' 
-      ? `This will reset ALL leads in batch "${selectedBatch}" for this client back to "pending". Continue?`
-      : 'This will reset ALL leads for this client back to "pending". Continue?';
-      
-    if (!confirm(msg)) return;
-    
-    setLoading(true);
-    try {
-      await resilientFetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId: addFormData.userId, 
-          action: 'bulk_reset',
-          batchId: selectedBatch !== 'all' ? selectedBatch : undefined,
-          status: 'pending' 
-        }),
-      });
-      await fetchData();
-      alert('✅ Leads have been reset to pending!');
-    } catch (e: any) {
-      alert(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function saveScript() {
     if (!addFormData.userId) return;
@@ -395,11 +364,7 @@ export default function AdminLeadsPage() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-            {leads.length > 0 && (
-              <button onClick={bulkResetStatus} className="btn-outline" style={{ color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)' }}>
-                <Activity size={18} /> Reset All to Pending
-              </button>
-            )}
+
             <button onClick={runAllCalls} className="btn-primary" style={{ background: '#ec4899', borderColor: '#ec4899' }}>
               <Phone size={18} /> Run Agent on All
             </button>
