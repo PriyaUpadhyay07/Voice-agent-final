@@ -3,6 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/db";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import Nodemailer from "next-auth/providers/nodemailer";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
 
@@ -14,6 +15,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   providers: [
+    Nodemailer({
+      server: process.env.EMAIL_SERVER,
+      from: process.env.EMAIL_FROM || "VoiceAgent <no-reply@voiceagent.com>",
+    }),
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,

@@ -7,6 +7,8 @@ import {
   XCircle, Loader2, CreditCard, Shield, ChevronDown
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
+import { loginWithEmail } from './actions';
+import { useSession } from 'next-auth/react';
 
 type Lead = {
   id: string;
@@ -40,38 +42,19 @@ function ClientDemoContent() {
   const [batches, setBatches] = useState<string[]>([]);
   const [activeBatch, setActiveBatch] = useState<string | null>(null);
   
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Login simulation (In production, this is Magic Links)
+  // Real Magic Link Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Create or get user
-      const res = await fetch('/api/leads', { // Using leads API just to ping backend, in real app use auth API
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: email, name: 'Demo Client', phone: '000', dummy: true }) 
-      });
-      // We will just simulate login by fetching all leads for this "email" (which we will use as ID for demo)
-      const clientsRes = await fetch('/api/clients');
-      const clients = await clientsRes.json();
-      
-      let me = clients.find((c: any) => c.email === email);
-      if (!me) {
-        // Fallback: If not found, we just pretend we logged in to a new empty account
-        me = { id: email, email, name: 'Demo User', creditsMinutes: 10, walletAmount: 50, script: script };
-      }
-      
-      setClientData(me);
-      setScript(me.script || script);
-      setIsLoggedIn(true);
-      await fetchMyLeads(me.id);
+      await loginWithEmail(email);
+      setMagicLinkSent(true);
     } catch (err) {
       console.error(err);
-      // Fallback for UI demo
-      setClientData({ id: email, email, name: 'Demo User', creditsMinutes: 10, walletAmount: 50 });
-      setIsLoggedIn(true);
+      alert("Failed to send Magic Link. Please check your EMAIL_SERVER configuration.");
     }
     setLoading(false);
   };
@@ -214,22 +197,34 @@ function ClientDemoContent() {
         <div className="glass-card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}><Phone size={32} /></div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>AI Agent Demo</h1>
-          <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '2rem', fontSize: '0.9rem' }}>Enter your email to access your secure demo portal.</p>
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <input 
-              type="email" 
-              required
-              placeholder="name@company.com" 
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={{ padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))', background: 'transparent', color: 'hsl(var(--foreground))' }}
-            />
-            <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '0.75rem' }}>
-              {loading ? <Loader2 className="spinner" size={16} /> : 'Access Demo'}
-            </button>
-          </form>
+          
+          {magicLinkSent ? (
+            <div style={{ padding: '2rem 0' }}>
+              <CheckCircle size={48} color="#10b981" style={{ margin: '0 auto 1rem' }} />
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Check your email</h2>
+              <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem' }}>We've sent a magic link to <strong>{email}</strong>. Click it to log in securely.</p>
+            </div>
+          ) : (
+            <>
+              <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '2rem', fontSize: '0.9rem' }}>Enter your email to access your secure demo portal.</p>
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <input 
+                  type="email" 
+                  required
+                  placeholder="name@company.com" 
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  style={{ padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))', background: 'transparent', color: 'hsl(var(--foreground))' }}
+                />
+                <button type="submit" className="btn-primary" disabled={loading} style={{ padding: '0.75rem' }}>
+                  {loading ? <Loader2 className="spinner" size={16} /> : 'Send Magic Link'}
+                </button>
+              </form>
+            </>
+          )}
+          
           <p style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', marginTop: '1.5rem' }}>
-            <Shield size={12} style={{ display: 'inline', marginRight: '4px' }}/> Secured via Magic Link (Simulated)
+            <Shield size={12} style={{ display: 'inline', marginRight: '4px' }}/> Secured via Magic Link (Real Auth)
           </p>
         </div>
       </div>
