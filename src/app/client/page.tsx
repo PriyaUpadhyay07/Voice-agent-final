@@ -7,8 +7,7 @@ import {
   XCircle, Loader2, CreditCard, Shield, ChevronDown
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
-import { loginWithEmail } from './actions';
-import { useSession } from 'next-auth/react';
+import { loginWithEmail, getClientSession } from './actions';
 
 type Lead = {
   id: string;
@@ -32,7 +31,7 @@ function ClientDemoContent() {
   const [email, setEmail] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [clientData, setClientData] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // App State
   const [countryCode, setCountryCode] = useState('+1');
@@ -44,6 +43,37 @@ function ClientDemoContent() {
   
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      const session = await getClientSession();
+      if (session?.user?.email) {
+        setEmail(session.user.email);
+        setIsLoggedIn(true);
+        
+        // Fetch client data
+        const clientsRes = await fetch('/api/clients');
+        const clients = await clientsRes.json();
+        let me = clients.find((c: any) => c.email === session.user.email);
+        
+        if (!me) {
+          // Auto-create dummy client data for demo if not in DB yet
+          me = { id: session.user.id || session.user.email, email: session.user.email, name: session.user.name || 'Demo User', creditsMinutes: 10, walletAmount: 50, script: script };
+        }
+        
+        setClientData(me);
+        setScript(me.script || script);
+        await fetchMyLeads(me.id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
 
   // Real Magic Link Login
   const handleLogin = async (e: React.FormEvent) => {
