@@ -53,7 +53,6 @@ function ClientDemoContent() {
       const session = await getClientSession();
       if (session?.user?.email) {
         setEmail(session.user.email);
-        setIsLoggedIn(true);
         
         // Fetch client data
         const clientsRes = await fetch('/api/clients');
@@ -68,6 +67,9 @@ function ClientDemoContent() {
         setClientData(me);
         setScript(me.script || script);
         await fetchMyLeads(me.id);
+        
+        // Set logged in LAST so UI doesn't crash trying to read null clientData
+        setIsLoggedIn(true);
       }
     } catch (err) {
       console.error(err);
@@ -221,7 +223,11 @@ function ClientDemoContent() {
   };
 
   // Pre-Login Screen
-  if (!isLoggedIn) {
+  if (loading && !magicLinkSent) {
+    return <div className="flex-center h-screen"><Loader2 className="spinner" size={32} /></div>;
+  }
+
+  if (!isLoggedIn || !clientData) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'hsl(var(--background))' }}>
         <div className="glass-card" style={{ maxWidth: '400px', width: '100%', textAlign: 'center', padding: '2rem' }}>
