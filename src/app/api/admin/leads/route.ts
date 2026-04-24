@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const leads = await prisma.lead.findMany({
       include: {
-        calls: { orderBy: { createdAt: 'desc' }, take: 1 }, // Speed optimization
+        calls: { orderBy: { createdAt: 'desc' } }, // Fetch all calls for history
         user: { select: { name: true, email: true } },
       },
       orderBy: { createdAt: 'desc' },

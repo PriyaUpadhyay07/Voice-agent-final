@@ -5,24 +5,27 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String    @default("client")
-  status        String    @default("pending")
-  walletAmount  Float     @default(0)
-  script        String?   @default("")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  leads         Lead[]
-  sessions      Session[]
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  role            String    @default("client")
+  status          String    @default("pending")
+  walletAmount    Float     @default(0)
+  creditsMinutes  Float     @default(0)     // Total calling minutes remaining
+  script          String?   @default("")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  accounts        Account[]
+  leads           Lead[]
+  sessions        Session[]
+  payments        Payment[]
 }
 
 model Account {
@@ -66,7 +69,7 @@ model Lead {
   email        String?
   name         String
   company      String?
-  status       String    @default("pending")
+  status       String    @default("pending")   // pending | interested | busy | rejected | calling
   rejectReason String?
   scheduledAt  DateTime?
   timezone     String?
@@ -79,10 +82,24 @@ model Lead {
 model Call {
   id           String   @id @default(cuid())
   leadId       String
-  duration     Int      @default(0)
+  duration     Int      @default(0)       // Duration in seconds
   costDeducted Float    @default(0)
   transcript   String?
-  status       String?
+  status       String?                    // completed | failed | no-answer
+  vapiCallId   String?                    // VAPI's call ID for reference
+  summary      String?                    // AI-generated call summary
   createdAt    DateTime @default(now())
   lead         Lead     @relation(fields: [leadId], references: [id])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  userId          String
+  amount          Float                    // Amount paid in USD/INR
+  creditsAdded    Float                    // Minutes added
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  status          String   @default("pending")  // pending | completed | failed
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
 }

@@ -1,41 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../lib/db';
-import twilio from 'twilio';
+import { createVapiCall } from '../../../lib/vapi';
 
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID || 'MISSING',
-  process.env.TWILIO_AUTH_TOKEN || 'MISSING'
-);
+export const dynamic = 'force-dynamic';
 
+const COST_PER_MINUTE = 0.07; // Estimated VAPI + Cartesia + SignalWire cost
+const MIN_CREDITS = 1; // Minimum 1 minute to make a call
 
-
-
-const COST_PER_MINUTE = 0.15; // $0.15/min
-const MIN_BALANCE = 1.0; // minimum wallet balance to initiate a call
-
-// Smart phone number formatter — never blindly adds +1
-// Rules: already has '+' → use as-is | 10 digits starting 6-9 → India (+91) | else → add +1 fallback
+// Smart phone number formatter
 function formatPhoneNumber(raw: string): string {
-  // If it's a SIP URI, don't format it like a PSTN number
   if (raw.toLowerCase().startsWith('sip:') || raw.includes('@')) {
     return raw;
   }
-
-  const cleaned = raw.replace(/[\s\-().]/g, ''); // strip spaces, dashes, parens, dots
-  if (cleaned.startsWith('+')) return cleaned;   // already has country code
-  // Indian mobile numbers: 10 digits starting with 6, 7, 8, or 9
+  const cleaned = raw.replace(/[\s\-().]/g, '');
+  if (cleaned.startsWith('+')) return cleaned;
   if (/^[6-9]\d{9}$/.test(cleaned)) return `+91${cleaned}`;
-  // US 10-digit
   if (/^\d{10}$/.test(cleaned)) return `+1${cleaned}`;
-  // 11 digits starting with 91 (India without +)
   if (/^91[6-9]\d{9}$/.test(cleaned)) return `+${cleaned}`;
-  // 11 digits starting with 1 (US without +)
   if (/^1\d{10}$/.test(cleaned)) return `+${cleaned}`;
-  // Fallback: just add + and hope for the best
   return `+${cleaned}`;
 }
 
-// POST /api/call — initiate a voice call to a lead
+// POST /api/call — initiate a voice call to a lead via VAPI
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -54,92 +40,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
     }
 
-    // Skip SIP addresses - only real phone numbers can be called
+    // Skip SIP addresses
     if (lead.phone.includes('@')) {
-      return NextResponse.json({ error: 'Cannot call SIP addresses. Only phone numbers supported.' }, { status: 400 });
+      return NextResponse.json({ error: 'Cannot call SIP addresses.' }, { status: 400 });
     }
 
-    // Check wallet balance
-    if (lead.user.walletAmount < MIN_BALANCE) {
+    // Check credits
+    if (lead.user.creditsMinutes < MIN_CREDITS) {
       return NextResponse.json({
-        error: `Insufficient wallet balance. Current: $${lead.user.walletAmount.toFixed(2)}`,
+        error: `Insufficient credits. Current: ${lead.user.creditsMinutes.toFixed(0)} minutes`,
       }, { status: 402 });
     }
+
+    // Update lead status
+    await prisma.lead.update({
+      where: { id: leadId },
+      data: { status: 'calling' },
+    });
+
+    // Format phone number
+    const formattedPhone = formatPhoneNumber(lead.phone);
+
+    // Create call via VAPI
+    const vapiResponse = await createVapiCall({
+      phoneNumber: formattedPhone,
+      leadName: lead.name,
+      leadCompany: lead.company || undefined,
+      customScript: lead.user.script || undefined,
+    });
 
     // Create call record
     const callRecord = await prisma.call.create({
       data: {
         leadId,
-        status: 'initiated',
+        status: 'in-progress',
+        vapiCallId: vapiResponse.id,
         duration: 0,
         costDeducted: 0,
       },
     });
 
-    try {
-      const agentId = process.env.ELEVENLABS_AGENT_ID || '';
-
-      // FORCE Vercel URL so SignalWire can ALWAYS reach it (localhost won't work)
-      const twimlUrl = `https://voice-agent-jbl4.vercel.app/api/twiml?agent_id=${agentId}`;
-
-      let formattedPhone = formatPhoneNumber(lead.phone);
-      const provider = (process.env.CALL_PROVIDER || 'signalwire').toLowerCase();
-      let callSid = '';
-
-      if (provider === 'signalwire') {
-        // Direct REST API call to SignalWire (No SDK dependency)
-        const projectId = process.env.SIGNALWIRE_PROJECT_ID;
-        const apiToken = process.env.SIGNALWIRE_API_TOKEN;
-        const spaceUrl = process.env.SIGNALWIRE_SPACE_URL;
-        
-        const auth = Buffer.from(`${projectId}:${apiToken}`).toString('base64');
-        const restUrl = `https://${spaceUrl}/api/laml/2010-04-01/Accounts/${projectId}/Calls`;
-
-        const swRes = await fetch(restUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Basic ${auth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            From: process.env.SIGNALWIRE_PHONE_NUMBER!,
-            To: formattedPhone,
-            Url: twimlUrl,
-          }),
-        });
-
-        if (!swRes.ok) {
-          const swError = await swRes.text();
-          throw new Error(`SignalWire API Error: ${swError}`);
-        }
-
-        const swData: any = await swRes.json();
-        callSid = swData.sid;
-      } else {
-        const call = await twilioClient.calls.create({
-          from: process.env.TWILIO_PHONE_NUMBER!,
-          to: formattedPhone,
-          url: twimlUrl,
-          method: 'POST',
-        });
-        callSid = call.sid;
-      }
-
-      await prisma.call.update({
-        where: { id: callRecord.id },
-        data: { status: `${provider}:${callSid}` },
-      });
-
-      return NextResponse.json({ success: true, callSid });
-    } catch (innerError: any) {
-      console.error('Telephony Inner Error:', innerError);
-      // Revert status on inner failure
-      await prisma.lead.update({ where: { id: leadId }, data: { status: 'failed' } });
-      return NextResponse.json({ error: `Telephony Error: ${innerError.message}` }, { status: 500 });
-    }
+    return NextResponse.json({
+      success: true,
+      callId: callRecord.id,
+      vapiCallId: vapiResponse.id,
+    });
 
   } catch (error: any) {
-    console.error('CRITICAL CALL API ERROR:', error);
-    return NextResponse.json({ error: `System Error: ${error.message}` }, { status: 500 });
+    console.error('Call API Error:', error);
+    return NextResponse.json({ error: `Error: ${error.message}` }, { status: 500 });
   }
 }

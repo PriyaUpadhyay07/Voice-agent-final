@@ -10,6 +10,8 @@ function LeadsViewContent() {
   const batchId = searchParams.get('batch');
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTranscript, setSelectedTranscript] = useState<any | null>(null);
+
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -64,6 +66,21 @@ function LeadsViewContent() {
     document.body.removeChild(link);
   }
 
+  async function syncTranscript(callId: string) {
+    try {
+      const res = await fetch(`/api/call/${callId}/sync`);
+      const data = await res.json();
+      if (res.ok) {
+        fetchLeads(); // Refresh
+        if (selectedTranscript?.call.id === callId) {
+          setSelectedTranscript((prev: any) => prev ? { ...prev, call: { ...prev.call, transcript: data.transcript } } : null);
+        }
+      }
+    } catch (e) {
+      console.error('Error syncing transcript');
+    }
+  }
+
   return (
     <div style={{ padding: '2rem', minHeight: '100vh', background: 'hsl(var(--background))' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
@@ -81,6 +98,52 @@ function LeadsViewContent() {
             </button>
           </div>
         </div>
+
+        {/* Transcript Modal */}
+        {selectedTranscript && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem'
+          }}>
+            <div className="glass-card animate-fade-in" style={{ maxWidth: '650px', width: '100%', maxHeight: '80vh', overflow: 'auto', background: 'hsl(var(--card))' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                <div>
+                  <h3 style={{ fontWeight: '600', fontSize: '1.15rem' }}>📞 Call Transcript</h3>
+                  <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                    {selectedTranscript.leadName} • {selectedTranscript.leadPhone}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  {!selectedTranscript.call.transcript && (
+                    <button
+                      onClick={() => syncTranscript(selectedTranscript.call.id)}
+                      className="btn-primary"
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: '#6366f1' }}
+                    >
+                      Sync Transcript
+                    </button>
+                  )}
+                  <button onClick={() => setSelectedTranscript(null)} style={{ background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', fontSize: '1.5rem', padding: '0.25rem' }}>×</button>
+                </div>
+              </div>
+
+              <div style={{
+                background: 'rgba(0,0,0,0.35)',
+                borderRadius: 'var(--radius)',
+                padding: '1.5rem',
+                fontSize: '0.9rem',
+                lineHeight: '1.8',
+                whiteSpace: 'pre-wrap',
+                color: 'hsl(var(--foreground))',
+                border: '1px solid rgba(255,255,255,0.05)',
+                maxHeight: '400px',
+                overflowY: 'auto',
+              }}>
+                {selectedTranscript.call.transcript || '⏳ No transcript available yet.'}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="glass-card" style={{ marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))' }}>
@@ -123,7 +186,16 @@ function LeadsViewContent() {
                     </td>
                     <td style={{ padding: '1rem' }}>{l.calls.length}</td>
                     <td style={{ padding: '1rem', fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {l.calls[0]?.transcript || 'No transcript yet'}
+                      {l.calls[0] ? (
+                        <button 
+                          onClick={() => setSelectedTranscript({ call: l.calls[0], leadName: l.name, leadPhone: l.phone })}
+                          style={{ background: 'none', border: 'none', color: 'inherit', textAlign: 'left', cursor: 'pointer', padding: 0, width: '100%', textOverflow: 'ellipsis', overflow: 'hidden' }}
+                        >
+                          {l.calls[0].transcript || 'View Transcript'}
+                        </button>
+                      ) : (
+                        'No history yet'
+                      )}
                     </td>
                   </tr>
                 ))}

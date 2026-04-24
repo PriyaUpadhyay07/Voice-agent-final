@@ -2,12 +2,13 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth-provider';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Voice Calling AI Agent - SaaS Platform',
-  description: 'AI-powered voice cold calling agent designed to supercharge your outbound sales automatically.',
+  title: 'VoiceAgent — AI-Powered Cold Calling',
+  description: 'Professional AI voice agent for automated outbound sales calls.',
 };
 
 export default function RootLayout({
@@ -25,6 +26,8 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        {/* Razorpay Checkout Script */}
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </body>
     </html>
   );
