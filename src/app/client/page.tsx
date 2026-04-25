@@ -119,9 +119,10 @@ function ClientDemoContent() {
         setLeads(data);
         
         const uniqueBatches = Array.from(new Set(data.map((l: any) => l.batchId).filter(Boolean))) as string[];
-      setBatches(uniqueBatches);
-      if (uniqueBatches.length > 0 && !activeBatch) {
-        setActiveBatch(uniqueBatches[0]);
+        setBatches(uniqueBatches);
+        if (uniqueBatches.length > 0 && !activeBatch) {
+          setActiveBatch(uniqueBatches[0]);
+        }
       }
     } catch (err) {
       console.error(err);
