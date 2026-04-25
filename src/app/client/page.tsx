@@ -162,6 +162,8 @@ function ClientDemoContent() {
       } catch (err) {
         alert('Failed to upload leads.');
       }
+    } else {
+      alert('No valid leads found in this file. Please ensure it is a CSV with Name and Phone columns.');
     }
     setLoading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -442,8 +444,9 @@ function ClientDemoContent() {
               {uploadedFiles.map((file, i) => (
                 <div key={i} style={{ 
                   display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', 
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid hsl(var(--border))', 
-                  borderRadius: '12px', minWidth: '180px', position: 'relative'
+                  background: 'var(--card-hover)', border: '1px solid var(--border)', 
+                  borderRadius: '12px', minWidth: '200px', position: 'relative',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                 }}>
                   <div style={{ 
                     width: '32px', height: '32px', borderRadius: '8px', background: file.type === 'CSV' ? '#10b981' : '#3b82f6',
