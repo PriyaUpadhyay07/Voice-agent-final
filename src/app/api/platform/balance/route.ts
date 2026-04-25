@@ -35,23 +35,31 @@ export async function GET() {
       platformData.signalWireStatus = 'Error';
     }
 
-    // 2. Fetch Vapi Org Info
+    // 2. Fetch Vapi Usage (Spent Amount)
     try {
-      const vapiRes = await fetch(`https://api.vapi.ai/org`, {
+      const vapiRes = await fetch(`https://api.vapi.ai/call?limit=1000`, {
         headers: { 'Authorization': `Bearer ${process.env.VAPI_PRIVATE_KEY}` }
       });
       if (vapiRes.ok) {
-        const vapiJson = await vapiRes.json();
-        // If SignalWire balance was missing, maybe Vapi has billing info
-        if (!platformData.realBalance && vapiJson.billingLimit) {
-           platformData.realBalance = vapiJson.billingLimit;
-        }
+        const calls = await vapiRes.json();
+        const totalSpent = Array.isArray(calls) ? calls.reduce((sum, c) => sum + (c.cost || 0), 0) : 0;
+        
+        // Use Admin's wallet as the starting balance for the entire platform
+        const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+        const startingBalance = admin?.walletAmount || 5.00;
+        
+        platformData.realBalance = Math.max(0, startingBalance - totalSpent);
+        platformData.vapiStatus = 'Connected';
       } else {
         platformData.vapiStatus = 'Unauthorized';
       }
     } catch (e) {
       platformData.vapiStatus = 'Error';
     }
+
+    // 3. Sync with DB minutes (approx)
+    const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+    (platformData as any).creditsMinutes = admin?.creditsMinutes || ((platformData.realBalance || 0) * 10);
 
     // 3. Count total calls in DB
     const callCount = await prisma.call.count();

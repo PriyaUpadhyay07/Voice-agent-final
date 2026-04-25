@@ -7,8 +7,8 @@ async function seed() {
     const user = await prisma.user.update({
       where: { email: 'upadhyaypriya479@gmail.com' },
       data: {
-        walletAmount: 125.50,
-        creditsMinutes: 600,
+        walletAmount: 5.00,
+        creditsMinutes: 50,
         role: 'ADMIN' 
       }
     });
