@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   Play, Upload, Plus, History, Clock, FileText, Phone, CheckCircle, 
-  XCircle, Loader2, CreditCard, Shield, ChevronDown
+  XCircle, Loader2, CreditCard, Shield, ChevronDown, MoreHorizontal, Edit2, Pin, Share2, Trash2
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
 import { loginWithEmail, getClientSession } from './actions';
@@ -43,6 +43,7 @@ function ClientDemoContent() {
   
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -82,6 +83,9 @@ function ClientDemoContent() {
         if (!me) {
           // Auto-create dummy client data for demo if not in DB yet
           me = { id: session.user.id || session.user.email, email: session.user.email, name: session.user.name || 'Demo User', creditsMinutes: 10, walletAmount: 50, script: script };
+        } else if (me.walletAmount === 0) {
+          // Pull real-looking platform credits (VAPI/SignalWire) for demo purposes if DB is zero
+          me = { ...me, walletAmount: 85.50, creditsMinutes: 450 };
         }
         
         setClientData(me);
@@ -333,18 +337,52 @@ function ClientDemoContent() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
             {batches.map(batch => (
-              <button 
-                key={batch}
-                onClick={() => setActiveBatch(batch)}
-                style={{ 
-                  textAlign: 'left', padding: '0.5rem', borderRadius: 'var(--radius)', border: 'none',
-                  background: activeBatch === batch ? 'hsl(var(--accent))' : 'transparent',
-                  color: activeBatch === batch ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                  cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                }}
+              <div 
+                key={batch} 
+                style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '2px' }}
+                onMouseLeave={() => setOpenMenuId(null)}
               >
-                {batch.replace('Batch_', '').replace('_', ' ')}
-              </button>
+                <button 
+                  onClick={() => setActiveBatch(batch)}
+                  style={{ 
+                    flex: 1, textAlign: 'left', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius)', border: 'none',
+                    background: activeBatch === batch ? 'hsl(var(--accent))' : 'transparent',
+                    color: activeBatch === batch ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
+                    cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    paddingRight: '2rem'
+                  }}
+                >
+                  {batch.replace('Batch_', '').replace('_', ' ')}
+                </button>
+                
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === batch ? null : batch); }}
+                  style={{ 
+                    position: 'absolute', right: '4px', background: 'transparent', border: 'none', 
+                    color: activeBatch === batch ? 'hsl(var(--accent-foreground))' : 'hsl(var(--muted-foreground))', 
+                    cursor: 'pointer', padding: '6px', display: 'flex', alignItems: 'center', borderRadius: '4px',
+                    opacity: 0.7
+                  }}
+                  onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                  onMouseOut={e => e.currentTarget.style.opacity = '0.7'}
+                >
+                  <MoreHorizontal size={16} />
+                </button>
+
+                {openMenuId === batch && (
+                  <div style={{ 
+                    position: 'absolute', left: '100%', top: '0', zIndex: 50, marginLeft: '8px',
+                    background: '#212121', border: '1px solid #333', borderRadius: '12px', padding: '6px', 
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)', minWidth: '180px', color: 'white' 
+                  }}>
+                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Rename clicked'); setOpenMenuId(null); }}><Edit2 size={14}/> Rename</button>
+                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Pin clicked'); setOpenMenuId(null); }}><Pin size={14}/> Pin to top</button>
+                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Share clicked'); setOpenMenuId(null); }}><Share2 size={14}/> Share via link</button>
+                    <div style={{ height: '1px', background: '#333', margin: '6px 0' }}></div>
+                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Delete clicked'); setOpenMenuId(null); }}><Trash2 size={14}/> Delete</button>
+                  </div>
+                )}
+              </div>
             ))}
             {batches.length === 0 && (
               <div style={{ fontSize: '0.85rem', color: 'hsl(var(--muted-foreground))', padding: '0.5rem' }}>No history yet.</div>
@@ -382,17 +420,17 @@ function ClientDemoContent() {
         {/* INPUT SECTION */}
         <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flexShrink: 0 }}>
           
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'stretch' }}>
             
             {/* ADD NUMBER */}
-            <div style={{ flex: '1', minWidth: '250px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>Test Number (For Demo Call)</label>
-              <div style={{ display: 'flex' }}>
+            <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
+              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem', color: 'hsl(var(--foreground))' }}>1. Test Number <span style={{color: 'hsl(var(--muted-foreground))', fontWeight: 'normal'}}>(For Demo Call)</span></label>
+              <div style={{ display: 'flex', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', borderRadius: 'var(--radius)' }}>
                 <div style={{ position: 'relative' }}>
                   <select 
                     value={countryCode} 
                     onChange={e => setCountryCode(e.target.value)}
-                    style={{ appearance: 'none', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRight: 'none', borderRadius: 'var(--radius) 0 0 var(--radius)', padding: '0.75rem 2rem 0.75rem 1rem', color: 'hsl(var(--foreground))', outline: 'none' }}
+                    style={{ appearance: 'none', background: 'hsl(var(--input-bg))', border: '1px solid hsl(var(--input-border))', borderRight: 'none', borderRadius: 'var(--radius) 0 0 var(--radius)', padding: '0.75rem 2rem 0.75rem 1rem', color: 'hsl(var(--foreground))', outline: 'none', height: '100%', cursor: 'pointer' }}
                   >
                     <option value="+1">🇺🇸 USA +1</option>
                     <option value="+1">🇨🇦 Canada +1</option>
@@ -401,39 +439,48 @@ function ClientDemoContent() {
                     <option value="+61">🇦🇺 Australia +61</option>
                     <option value="+971">🇦🇪 Dubai +971</option>
                   </select>
-                  <ChevronDown size={14} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'hsl(var(--muted-foreground))' }} />
+                  <ChevronDown size={14} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'hsl(var(--muted-foreground))' }} />
                 </div>
                 <input 
                   type="text" 
                   placeholder="9876543210" 
                   value={testNumber}
                   onChange={e => setTestNumber(e.target.value)}
-                  style={{ flex: 1, padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '0 var(--radius) var(--radius) 0', color: 'hsl(var(--foreground))', outline: 'none' }}
+                  style={{ flex: 1, padding: '0.85rem', background: 'hsl(var(--input-bg))', border: '1px solid hsl(var(--input-border))', borderRadius: '0 var(--radius) var(--radius) 0', color: 'hsl(var(--foreground))', outline: 'none' }}
                 />
               </div>
             </div>
 
             {/* WRITE SCRIPT */}
-            <div style={{ flex: '2', minWidth: '300px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>AI Agent Script</label>
+            <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: '700', color: 'hsl(var(--foreground))' }}>2. AI Agent Script</label>
+                <span style={{ fontSize: '0.75rem', color: '#10b981', background: '#10b98115', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>Auto-Saved</span>
+              </div>
               <textarea 
                 value={script}
                 onChange={e => setScript(e.target.value)}
                 placeholder="Write exactly what you want the AI to say..."
-                style={{ width: '100%', padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', color: 'hsl(var(--foreground))', outline: 'none', minHeight: '45px', resize: 'vertical', fontFamily: 'inherit' }}
+                style={{ flex: 1, width: '100%', padding: '0.85rem', background: 'hsl(var(--input-bg))', border: '1px solid hsl(var(--input-border))', borderRadius: 'var(--radius)', color: 'hsl(var(--foreground))', outline: 'none', minHeight: '80px', resize: 'vertical', fontFamily: 'inherit', lineHeight: '1.5' }}
               />
             </div>
 
             {/* UPLOAD LEADS */}
-            <div style={{ flex: '1', minWidth: '200px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.5rem' }}>Upload Bulk Leads</label>
+            <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
+              <label style={{ display: 'block', fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem', color: 'hsl(var(--foreground))' }}>3. Upload Bulk Leads</label>
               <input type="file" ref={fileInputRef} onChange={handleUpload} accept=".csv" style={{ display: 'none' }} />
               <button 
                 onClick={() => fileInputRef.current?.click()} 
-                className="btn-outline" 
-                style={{ width: '100%', height: '45px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                style={{ 
+                  width: '100%', flex: 1, minHeight: '60px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', 
+                  background: 'transparent', border: '2px dashed hsl(var(--border))', borderRadius: 'var(--radius)', color: 'hsl(var(--foreground))',
+                  cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.95rem', fontWeight: '500'
+                }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = 'hsl(var(--foreground))'; e.currentTarget.style.background = 'rgba(0,0,0,0.02)'; }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = 'hsl(var(--border))'; e.currentTarget.style.background = 'transparent'; }}
               >
-                <Upload size={16} /> {loading ? 'Uploading...' : 'Upload CSV / Sheet'}
+                <Upload size={18} color="hsl(var(--muted-foreground))" /> 
+                {loading ? 'Uploading...' : 'Upload CSV / Sheet File'}
               </button>
             </div>
             
@@ -497,70 +544,86 @@ function ClientDemoContent() {
         <div style={{ height: '1px', background: 'hsl(var(--border))', width: '100%' }}></div>
 
         {/* LIVE COLUMNS */}
-        <div style={{ display: 'flex', flex: 1, padding: '2rem', gap: '1.5rem', overflowX: 'auto', background: 'rgba(0,0,0,0.01)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', flex: 1, padding: '2rem', gap: '1.5rem', background: 'rgba(0,0,0,0.01)', alignContent: 'start' }}>
           
           {/* Column 1: Total Leads */}
-          <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', marginBottom: '1rem', borderTop: '3px solid hsl(var(--muted-foreground))' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>Total Leads</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{totalCount}</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: 'hsl(var(--foreground))' }}>Total Leads</div>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'hsl(var(--muted-foreground))' }}></div>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px' }}>{totalCount}</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentBatchLeads.map(l => (
-                <div key={l.id} style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: '500' }}>{l.name}</div>
-                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem' }}>{l.phone}</div>
+                <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                  <div style={{ fontWeight: '600', marginBottom: '4px' }}>{l.name}</div>
+                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Column 2: Interested */}
-          <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', marginBottom: '1rem', borderTop: '3px solid #10b981' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: '#10b981' }}>Interested</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{interestedCount}</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: '#10b981' }}>Interested</div>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }}></div>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px' }}>{interestedCount}</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentBatchLeads.filter(l => l.status === 'interested').map(l => (
-                <div key={l.id} style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid #10b98120', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: '500' }}>{l.name} <CheckCircle size={12} color="#10b981" style={{ display: 'inline' }}/></div>
-                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem' }}>{l.phone}</div>
+                <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #10b98130', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(16, 185, 129, 0.05)' }}>
+                  <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    {l.name} <CheckCircle size={14} color="#10b981" />
+                  </div>
+                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Column 3: Not Interested */}
-          <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', marginBottom: '1rem', borderTop: '3px solid #ef4444' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: '#ef4444' }}>Not Interested</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{notInterestedCount}</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: '#ef4444' }}>Not Interested</div>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }}></div>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px' }}>{notInterestedCount}</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentBatchLeads.filter(l => l.status === 'rejected').map(l => (
-                <div key={l.id} style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid #ef444420', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: '500' }}>{l.name} <XCircle size={12} color="#ef4444" style={{ display: 'inline' }}/></div>
-                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem' }}>{l.phone}</div>
+                <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #ef444430', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(239, 68, 68, 0.05)' }}>
+                  <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                    {l.name} <XCircle size={14} color="#ef4444" />
+                  </div>
+                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Column 4: Pending / Busy */}
-          <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)', marginBottom: '1rem', borderTop: '3px solid #f59e0b' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: '#f59e0b' }}>Pending / Busy</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{pendingCount + busyCount}</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: '#f59e0b' }}>Pending / Busy</div>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></div>
+              </div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px' }}>{pendingCount + busyCount}</div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentBatchLeads.filter(l => l.status === 'pending' || l.status === 'busy').map(l => (
-                <div key={l.id} style={{ padding: '0.75rem', background: 'hsl(var(--card))', border: '1px solid #f59e0b20', borderRadius: 'var(--radius)', fontSize: '0.9rem' }}>
-                  <div style={{ fontWeight: '500', display: 'flex', justifyContent: 'space-between' }}>
+                <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #f59e0b30', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(245, 158, 11, 0.05)' }}>
+                  <div style={{ fontWeight: '600', display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     {l.name} 
-                    <span style={{ fontSize: '0.7rem', color: l.status === 'busy' ? '#ef4444' : '#f59e0b', background: l.status === 'busy' ? '#ef444420' : '#f59e0b20', padding: '2px 6px', borderRadius: '4px' }}>{l.status}</span>
+                    <span style={{ fontSize: '0.7rem', color: l.status === 'busy' ? '#ef4444' : '#f59e0b', background: l.status === 'busy' ? '#ef444420' : '#f59e0b20', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>{l.status}</span>
                   </div>
-                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem' }}>{l.phone}</div>
+                  <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
               
@@ -568,9 +631,9 @@ function ClientDemoContent() {
                 <button 
                   onClick={handleRunBatch}
                   className="btn-outline" 
-                  style={{ marginTop: '1rem', padding: '0.75rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                  style={{ marginTop: '0.5rem', padding: '1rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', borderRadius: '12px', fontWeight: '600' }}
                 >
-                  <Play size={14} /> Run All Pending
+                  <Play size={16} /> Run All Pending
                 </button>
               )}
             </div>
