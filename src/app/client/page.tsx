@@ -44,11 +44,21 @@ function ClientDemoContent() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [platformInfo, setPlatformInfo] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     checkSession();
+    fetchPlatformInfo();
   }, []);
+
+  const fetchPlatformInfo = async () => {
+    try {
+      const res = await fetch('/api/platform/balance');
+      const data = await res.json();
+      setPlatformInfo(data);
+    } catch (e) {}
+  };
 
   const checkSession = async () => {
     try {
@@ -83,10 +93,8 @@ function ClientDemoContent() {
         if (!me) {
           // Auto-create dummy client data for demo if not in DB yet
           me = { id: session.user.id || session.user.email, email: session.user.email, name: session.user.name || 'Demo User', creditsMinutes: 10, walletAmount: 50, script: script };
-        } else if (me.walletAmount === 0) {
-          // Pull real-looking platform credits (VAPI/SignalWire) for demo purposes if DB is zero
-          me = { ...me, walletAmount: 85.50, creditsMinutes: 450 };
         }
+
         
         setClientData(me);
         setScript(me.script || me.script === '' ? me.script : script);
@@ -404,14 +412,18 @@ function ClientDemoContent() {
           {/* CREDITS DISPLAY */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'hsl(var(--card))', padding: '0.5rem 1rem', borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))' }}>
             <div>
-              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', fontWeight: '600' }}>Balance</div>
-              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>${clientData.walletAmount.toFixed(2)}</div>
+              <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                Balance {platformInfo?.realBalance !== null && clientData.walletAmount === 0 && <span style={{ fontSize: '0.65rem', color: '#10b981', background: '#10b98115', padding: '2px 4px', borderRadius: '4px' }}>LIVE</span>}
+              </div>
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                ${(clientData.walletAmount || platformInfo?.realBalance || 0.00).toFixed(2)}
+              </div>
             </div>
             <div style={{ height: '30px', width: '1px', background: 'hsl(var(--border))' }}></div>
             <div>
               <div style={{ fontSize: '0.75rem', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', fontWeight: '600' }}>Call Minutes</div>
               <div style={{ fontWeight: 'bold', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Clock size={14} /> {clientData.creditsMinutes.toFixed(0)} min
+                <Clock size={14} /> {(clientData.creditsMinutes || (platformInfo?.realBalance ? platformInfo.realBalance * 10 : 0)).toFixed(0)} min
               </div>
             </div>
           </div>
