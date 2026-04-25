@@ -268,7 +268,7 @@ function ClientDemoContent() {
                 color: 'hsl(var(--muted-foreground))', textAlign: 'left', lineHeight: '1.4'
               }}>
                 <span style={{ color: '#10b981', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>✨ Don't worry!</span>
-                It takes less than 10 seconds. Just enter your email here, then check your inbox and click the "Sign In" button to jump back in.
+                It takes less than 10 seconds. Just enter your email here, then check your inbox (email) and click the "Sign In" button to jump back in.
               </div>
               
               <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
