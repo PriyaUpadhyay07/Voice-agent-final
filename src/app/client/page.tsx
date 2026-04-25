@@ -42,6 +42,7 @@ function ClientDemoContent() {
   const [activeBatch, setActiveBatch] = useState<string | null>(null);
   
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,13 +52,32 @@ function ClientDemoContent() {
   const checkSession = async () => {
     try {
       const session = await getClientSession();
+      const adminRequestedUserId = searchParams.get('userId');
+      
+      // Smart Solution: If Admin is logged in, allow viewing any client portal via userId param
+      if (session?.user?.role === 'ADMIN' && adminRequestedUserId) {
+        const clientsRes = await fetch('/api/clients');
+        const clients = await clientsRes.json();
+        const targetClient = clients.find((c: any) => c.id === adminRequestedUserId);
+        
+        if (targetClient) {
+          setEmail(targetClient.email);
+          setClientData(targetClient);
+          setScript(targetClient.script || targetClient.script === '' ? targetClient.script : script);
+          await fetchMyLeads(targetClient.id);
+          setIsLoggedIn(true);
+          setLoading(false);
+          return;
+        }
+      }
+
       if (session?.user?.email) {
         setEmail(session.user.email);
         
         // Fetch client data
         const clientsRes = await fetch('/api/clients');
         const clients = await clientsRes.json();
-        let me = clients.find((c: any) => c.email === session.user.email);
+        let me = clients.find((c: any) => (c.email === session.user.email) || (adminRequestedUserId && c.id === adminRequestedUserId));
         
         if (!me) {
           // Auto-create dummy client data for demo if not in DB yet
@@ -65,7 +85,7 @@ function ClientDemoContent() {
         }
         
         setClientData(me);
-        setScript(me.script || script);
+        setScript(me.script || me.script === '' ? me.script : script);
         await fetchMyLeads(me.id);
         
         // Set logged in LAST so UI doesn't crash trying to read null clientData
@@ -93,12 +113,12 @@ function ClientDemoContent() {
 
   const fetchMyLeads = async (userId: string) => {
     try {
-      const res = await fetch('/api/admin/leads'); // Fetch all, filter locally for demo
+      const res = await fetch(`/api/leads?userId=${userId}`); 
       const data = await res.json();
-      const myLeads = data.filter((l: any) => l.userId === userId || l.user?.email === email);
-      setLeads(myLeads);
-      
-      const uniqueBatches = Array.from(new Set(myLeads.map((l: any) => l.batchId).filter(Boolean))) as string[];
+      if (Array.isArray(data)) {
+        setLeads(data);
+        
+        const uniqueBatches = Array.from(new Set(data.map((l: any) => l.batchId).filter(Boolean))) as string[];
       setBatches(uniqueBatches);
       if (uniqueBatches.length > 0 && !activeBatch) {
         setActiveBatch(uniqueBatches[0]);
@@ -135,7 +155,7 @@ function ClientDemoContent() {
         });
         
         if (res.ok) {
-          alert('Leads uploaded successfully!');
+          setUploadedFiles(prev => [...prev, { name: file.name, type: file.name.split('.').pop()?.toUpperCase() || 'CSV' }]);
           await fetchMyLeads(clientData.id);
           setActiveBatch(batchName);
         }
@@ -242,7 +262,15 @@ function ClientDemoContent() {
             </div>
           ) : (
             <>
-              <p style={{ color: 'hsl(var(--muted-foreground))', marginBottom: '2rem', fontSize: '0.9rem' }}>Enter your email to access your secure demo portal.</p>
+              <div style={{ 
+                marginBottom: '1.5rem', padding: '1rem', background: 'rgba(59, 130, 246, 0.05)', 
+                border: '1px solid rgba(59, 130, 246, 0.1)', borderRadius: '12px', fontSize: '0.85rem', 
+                color: 'hsl(var(--muted-foreground))', textAlign: 'left', lineHeight: '1.4'
+              }}>
+                <span style={{ color: '#10b981', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>✨ Don't worry!</span>
+                Your voice calling agent is safe. Just enter the email you used before, and click the link in your inbox to jump back in.
+              </div>
+              
               <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <input 
                   type="email" 
@@ -363,10 +391,12 @@ function ClientDemoContent() {
                     onChange={e => setCountryCode(e.target.value)}
                     style={{ appearance: 'none', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRight: 'none', borderRadius: 'var(--radius) 0 0 var(--radius)', padding: '0.75rem 2rem 0.75rem 1rem', color: 'hsl(var(--foreground))', outline: 'none' }}
                   >
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+91">🇮🇳 +91</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+61">🇦🇺 +61</option>
+                    <option value="+1">🇺🇸 USA +1</option>
+                    <option value="+1">🇨🇦 Canada +1</option>
+                    <option value="+91">🇮🇳 India +91</option>
+                    <option value="+44">🇬🇧 UK +44</option>
+                    <option value="+61">🇦🇺 Australia +61</option>
+                    <option value="+971">🇦🇪 Dubai +971</option>
                   </select>
                   <ChevronDown size={14} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'hsl(var(--muted-foreground))' }} />
                 </div>
@@ -405,6 +435,36 @@ function ClientDemoContent() {
             </div>
             
           </div>
+
+          {/* UPLOADED FILES PREVIEW */}
+          {uploadedFiles.length > 0 && (
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '-0.5rem' }}>
+              {uploadedFiles.map((file, i) => (
+                <div key={i} style={{ 
+                  display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', 
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid hsl(var(--border))', 
+                  borderRadius: '12px', minWidth: '180px', position: 'relative'
+                }}>
+                  <div style={{ 
+                    width: '32px', height: '32px', borderRadius: '8px', background: file.type === 'CSV' ? '#10b981' : '#3b82f6',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                  }}>
+                    {file.type === 'CSV' ? <FileText size={16} /> : <Upload size={16} />}
+                  </div>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))' }}>{file.type} File</div>
+                  </div>
+                  <button 
+                    onClick={() => setUploadedFiles(prev => prev.filter((_, idx) => idx !== i))}
+                    style={{ background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', padding: '4px' }}
+                  >
+                    <XCircle size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* RUN ACTION */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>

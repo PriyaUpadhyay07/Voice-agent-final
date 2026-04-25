@@ -4,15 +4,17 @@ import { auth } from '@/auth';
 
 // GET /api/leads
 export async function GET(request: NextRequest) {
-  // Direct Access Force: Bypass auth() entirely
-  const session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
+  const session = await auth();
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const userRole = (session.user as any).role;
   let userId = (session.user as any).id;
 
   // If admin, they might want to filter by userId query param
   const queryUserId = request.nextUrl.searchParams.get('userId');
-  if (userRole === 'admin' && queryUserId) {
+  if (userRole === 'ADMIN' && queryUserId) {
     userId = queryUserId;
   }
 
@@ -27,15 +29,17 @@ export async function GET(request: NextRequest) {
 
 // POST /api/leads — create single or bulk leads OR bulk reset
 export async function POST(request: NextRequest) {
-  // Direct Access Force: Bypass auth() entirely
-  const session = { user: { id: 'cmnvnz0b30000vvmj5etl0lsh', role: 'admin' } } as any;
+  const session = await auth();
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
   const body = await request.json();
   const { userId: bodyUserId, leads: bulkLeads, phone, name, company, batchId, action, status: resetStatus } = body;
   
   const userRole = (session.user as any).role;
   let targetUserId = (session.user as any).id;
-  if (userRole === 'admin' && bodyUserId) {
+  if (userRole === 'ADMIN' && bodyUserId) {
     targetUserId = bodyUserId;
   }
 
