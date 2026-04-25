@@ -440,27 +440,28 @@ function ClientDemoContent() {
 
           {/* UPLOADED FILES PREVIEW */}
           {uploadedFiles.length > 0 && (
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '-0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '-0.5rem' }}>
               {uploadedFiles.map((file, i) => (
                 <div key={i} style={{ 
-                  display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', 
-                  background: 'var(--card-hover)', border: '1px solid var(--border)', 
-                  borderRadius: '12px', minWidth: '200px', position: 'relative',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                  display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', 
+                  background: '#212121', border: '1px solid rgba(255,255,255,0.05)', 
+                  borderRadius: '16px', minWidth: '220px', position: 'relative',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)', color: 'white'
                 }}>
                   <div style={{ 
-                    width: '32px', height: '32px', borderRadius: '8px', background: file.type === 'CSV' ? '#10b981' : '#3b82f6',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                    width: '40px', height: '40px', borderRadius: '10px', 
+                    background: file.type === 'CSV' || file.type === 'XLSX' ? '#10b981' : '#ef4444',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0
                   }}>
-                    {file.type === 'CSV' ? <FileText size={16} /> : <Upload size={16} />}
+                    <FileText size={20} />
                   </div>
                   <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'hsl(var(--muted-foreground))' }}>{file.type} File</div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}>{file.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{file.type === 'CSV' ? 'Spreadsheet' : 'Document'}</div>
                   </div>
                   <button 
                     onClick={() => setUploadedFiles(prev => prev.filter((_, idx) => idx !== i))}
-                    style={{ background: 'none', border: 'none', color: 'hsl(var(--muted-foreground))', cursor: 'pointer', padding: '4px' }}
+                    style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', cursor: 'pointer', padding: '4px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <XCircle size={14} />
                   </button>
