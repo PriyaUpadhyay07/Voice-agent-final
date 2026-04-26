@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { 
   Play, Upload, Plus, History, Clock, FileText, Phone, CheckCircle, 
-  XCircle, Loader2, CreditCard, Shield, ChevronDown, MoreHorizontal, Edit2, Pin, Share2, Trash2
+  XCircle, Loader2, CreditCard, Shield, ChevronDown, MoreHorizontal, Edit2, Pin, Share2, Trash2, Activity
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
 import { loginWithEmail, getClientSession } from './actions';
