@@ -39,10 +39,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // Calculate cost: duration in seconds -> minutes * cost per minute
+    // Calculate cost: use the real cost from VAPI if available, otherwise fallback to estimate
     const durationMinutes = parsed.duration / 60;
-    const costPerMinute = 0.07; // VAPI + Cartesia + SignalWire estimated cost
-    const totalCost = durationMinutes * costPerMinute;
+    const totalCost = parsed.cost || (durationMinutes * 0.07);
+
 
     // Determine lead status from transcript
     const newLeadStatus = determineLeadStatus(

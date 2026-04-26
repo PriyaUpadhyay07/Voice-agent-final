@@ -46,10 +46,8 @@ export async function createVapiCall(options: VapiCallOptions): Promise<VapiCall
       number: options.phoneNumber,
       name: options.leadName,
     },
-    // Use SignalWire as telephony provider (BYOC)
-    phoneNumber: {
-      twilioPhoneNumber: process.env.SIGNALWIRE_PHONE_NUMBER,
-    },
+    // Use the imported BYOC (SignalWire) number ID from VAPI dashboard
+    phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID,
   };
 
   // Add assistant overrides if we have custom script

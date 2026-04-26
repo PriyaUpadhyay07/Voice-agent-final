@@ -7,12 +7,12 @@ async function seed() {
     const user = await prisma.user.update({
       where: { email: 'upadhyaypriya479@gmail.com' },
       data: {
-        walletAmount: 5.00,
-        creditsMinutes: 50,
+        walletAmount: 9.00,
+        creditsMinutes: 120, // Approx 120 mins for $9
         role: 'ADMIN' 
       }
     });
-    console.log(`Success! User ${user.email} updated to $${user.walletAmount} and ${user.creditsMinutes} mins.`);
+    console.log(`Real Data Synced! User ${user.email} initialized with $${user.walletAmount} (SignalWire $4 free + $5 topup).`);
   } catch (e) {
     console.error('Error seeding user:', e.message);
   } finally {

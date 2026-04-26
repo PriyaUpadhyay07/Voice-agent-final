@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         name: l.name,
         company: l.company || null,
         batchId: batchId || null,
-        status: 'pending',
+        status: 'uncalled',
       })),
     });
     return NextResponse.json({ count: created.count }, { status: 201 });
@@ -73,9 +73,30 @@ export async function POST(request: NextRequest) {
   }
 
   const lead = await prisma.lead.create({
-    data: { userId: targetUserId, phone, name, company: company || null, batchId: batchId || null, status: 'pending' },
+    data: { userId: targetUserId, phone, name, company: company || null, batchId: batchId || null, status: 'uncalled' },
   });
 
   return NextResponse.json(lead, { status: 201 });
 }
 
+// DELETE /api/leads — delete by batchId
+export async function DELETE(request: NextRequest) {
+  const session = await auth();
+  if (!session || !session.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const batchId = searchParams.get('batchId');
+  const userId = searchParams.get('userId');
+
+  if (!batchId || !userId) {
+    return NextResponse.json({ error: 'batchId and userId are required' }, { status: 400 });
+  }
+
+  const deleted = await prisma.lead.deleteMany({
+    where: { userId, batchId }
+  });
+
+  return NextResponse.json({ count: deleted.count });
+}

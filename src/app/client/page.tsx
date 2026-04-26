@@ -50,7 +50,8 @@ function ClientDemoContent() {
   useEffect(() => {
     checkSession();
     fetchPlatformInfo();
-  }, []);
+  }, [searchParams]);
+
 
   const fetchPlatformInfo = async () => {
     try {
@@ -230,32 +231,34 @@ function ClientDemoContent() {
   };
 
   const handleRunBatch = async () => {
-    const pendingLeads = currentBatchLeads.filter(l => l.status === 'pending');
-    if (pendingLeads.length === 0) {
-      alert("No pending leads in this batch.");
+    const uncalledLeads = currentBatchLeads.filter(l => l.status === 'uncalled');
+    if (uncalledLeads.length === 0) {
+      alert("No new leads to call in this batch.");
       return;
     }
     
     setLoading(true);
     await saveScript();
     
-    // Trigger calls for all pending sequentially (in production this would be a background job)
     let count = 0;
-    for (const lead of pendingLeads) {
+    for (const lead of uncalledLeads) {
       try {
-        await fetch('/api/call', {
+        const res = await fetch('/api/call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ leadId: lead.id })
         });
-        count++;
+        if (res.ok) count++;
+        // Refresh leads frequently to show progress
+        if (count % 2 === 0) await fetchMyLeads(clientData.id);
       } catch (e) { console.error(e); }
     }
     
-    alert(`Started ${count} calls!`);
+    alert(`Initiated ${count} calls! They will appear in the 'Pending/Busy' column as they start.`);
     await fetchMyLeads(clientData.id);
     setLoading(false);
   };
+
 
   // Pre-Login Screen
   if (loading && !magicLinkSent) {
@@ -310,14 +313,19 @@ function ClientDemoContent() {
     );
   }
 
-  // Active Batch Leads
-  const currentBatchLeads = activeBatch ? leads.filter(l => l.batchId === activeBatch) : leads;
+  // Active Batch Leads: If no active batch, show ZERO leads (for New Leads experience)
+  const currentBatchLeads = activeBatch ? leads.filter(l => l.batchId === activeBatch) : [];
+
   
   const totalCount = currentBatchLeads.length;
   const interestedCount = currentBatchLeads.filter(l => l.status === 'interested').length;
   const notInterestedCount = currentBatchLeads.filter(l => l.status === 'rejected').length;
-  const pendingCount = currentBatchLeads.filter(l => l.status === 'pending').length;
-  const busyCount = currentBatchLeads.filter(l => l.status === 'busy').length;
+  const pendingCount = currentBatchLeads.filter(l => l.status === 'uncalled').length;
+  const busyCount = currentBatchLeads.filter(l => l.status === 'busy' || l.status === 'calling').length;
+  
+  const [selectedTranscript, setSelectedTranscript] = useState<{name: string, transcript: string, summary: string} | null>(null);
+
+
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'hsl(var(--background))', color: 'hsl(var(--foreground))' }}>
@@ -387,7 +395,15 @@ function ClientDemoContent() {
                     <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Pin clicked'); setOpenMenuId(null); }}><Pin size={14}/> Pin to top</button>
                     <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Share clicked'); setOpenMenuId(null); }}><Share2 size={14}/> Share via link</button>
                     <div style={{ height: '1px', background: '#333', margin: '6px 0' }}></div>
-                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Delete clicked'); setOpenMenuId(null); }}><Trash2 size={14}/> Delete</button>
+                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={async () => { 
+                      if(confirm('Delete this batch?')) {
+                        await fetch('/api/leads?batchId=' + batch + '&userId=' + clientData.id, { method: 'DELETE' });
+                        await fetchMyLeads(clientData.id);
+                        if (activeBatch === batch) setActiveBatch(null);
+                        setOpenMenuId(null);
+                      }
+                    }}><Trash2 size={14}/> Delete</button>
+
                   </div>
                 )}
               </div>
@@ -531,7 +547,7 @@ function ClientDemoContent() {
           )}
 
           {/* RUN ACTION */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <button 
               onClick={currentBatchLeads.length > 0 ? handleRunBatch : handleRunTest}
               disabled={loading}
@@ -541,14 +557,13 @@ function ClientDemoContent() {
                 display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: loading ? 'not-allowed' : 'pointer',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.1)', transition: 'transform 0.1s'
               }}
-              onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-              onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
               {loading ? <Loader2 className="spinner" size={20} /> : <Play fill="currentColor" size={20} />}
-              {currentBatchLeads.length > 0 ? `RUN CAMPAIGN (${pendingCount} pending)` : 'TEST CALL NOW'}
+              {currentBatchLeads.length > 0 ? `RUN CAMPAIGN (${pendingCount} new)` : 'TEST CALL NOW'}
             </button>
+            {loading && <span style={{fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))'}}>Starting calls, please wait...</span>}
           </div>
+
 
         </div>
 
@@ -588,13 +603,18 @@ function ClientDemoContent() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentBatchLeads.filter(l => l.status === 'interested').map(l => (
-                <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #10b98130', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(16, 185, 129, 0.05)' }}>
+                <div 
+                  key={l.id} 
+                  onClick={() => l.calls?.[0] && setSelectedTranscript({ name: l.name, transcript: l.calls[0].transcript, summary: l.calls[0].summary })}
+                  style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #10b98130', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(16, 185, 129, 0.05)', cursor: l.calls?.[0] ? 'pointer' : 'default' }}
+                >
                   <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                     {l.name} <CheckCircle size={14} color="#10b981" />
                   </div>
                   <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
+
             </div>
           </div>
 
@@ -609,27 +629,32 @@ function ClientDemoContent() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {currentBatchLeads.filter(l => l.status === 'rejected').map(l => (
-                <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #ef444430', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(239, 68, 68, 0.05)' }}>
+                <div 
+                  key={l.id} 
+                  onClick={() => l.calls?.[0] && setSelectedTranscript({ name: l.name, transcript: l.calls[0].transcript, summary: l.calls[0].summary })}
+                  style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #ef444430', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(239, 68, 68, 0.05)', cursor: l.calls?.[0] ? 'pointer' : 'default' }}
+                >
                   <div style={{ fontWeight: '600', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
                     {l.name} <XCircle size={14} color="#ef4444" />
                   </div>
                   <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
+
             </div>
           </div>
 
-          {/* Column 4: Pending / Busy */}
+          {/* Column 4: In Progress / Busy */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '16px', marginBottom: '1.5rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: '#f59e0b' }}>Pending / Busy</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', color: '#f59e0b' }}>Calling / Busy</div>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b' }}></div>
               </div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px' }}>{pendingCount + busyCount}</div>
+              <div style={{ fontSize: '2rem', fontWeight: '800', letterSpacing: '-1px' }}>{busyCount}</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {currentBatchLeads.filter(l => l.status === 'pending' || l.status === 'busy').map(l => (
+              {currentBatchLeads.filter(l => l.status === 'busy' || l.status === 'calling').map(l => (
                 <div key={l.id} style={{ padding: '1rem', background: 'hsl(var(--card))', border: '1px solid #f59e0b30', borderRadius: '12px', fontSize: '0.9rem', boxShadow: '0 1px 3px rgba(245, 158, 11, 0.05)' }}>
                   <div style={{ fontWeight: '600', display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                     {l.name} 
@@ -638,22 +663,41 @@ function ClientDemoContent() {
                   <div style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Phone size={12}/> {l.phone}</div>
                 </div>
               ))}
-              
-              {(pendingCount > 0 || busyCount > 0) && (
-                <button 
-                  onClick={handleRunBatch}
-                  className="btn-outline" 
-                  style={{ marginTop: '0.5rem', padding: '1rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', fontSize: '0.9rem', borderRadius: '12px', fontWeight: '600' }}
-                >
-                  <Play size={16} /> Run All Pending
-                </button>
-              )}
             </div>
           </div>
 
+
         </div>
 
-      </main>
+      {/* TRANSCRIPT MODAL */}
+      {selectedTranscript && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '24px', width: '100%', maxWidth: '700px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 24px 48px rgba(0,0,0,0.3)' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid hsl(var(--border))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Call Analysis: {selectedTranscript.name}</h3>
+                <p style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))' }}>Transcript & Summary generated by AI</p>
+              </div>
+              <button onClick={() => setSelectedTranscript(null)} style={{ background: 'transparent', border: 'none', color: 'hsl(var(--foreground))', cursor: 'pointer' }}><XCircle size={24}/></button>
+            </div>
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#10b981', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}><Activity size={14}/> AI Summary</h4>
+                <div style={{ padding: '1rem', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', fontSize: '0.95rem', lineHeight: '1.5', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+                  {selectedTranscript.summary || 'Summary not available.'}
+                </div>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'hsl(var(--muted-foreground))', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '6px' }}><FileText size={14}/> Full Transcript</h4>
+                <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', fontSize: '0.9rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                  {selectedTranscript.transcript || 'No transcript available for this call.'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
