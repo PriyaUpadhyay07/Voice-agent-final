@@ -668,6 +668,7 @@ function ClientDemoContent() {
 
 
         </div>
+      </main>
 
       {/* TRANSCRIPT MODAL */}
       {selectedTranscript && (
