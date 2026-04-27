@@ -146,7 +146,18 @@ function ClientDemoContent() {
         setLeads(data);
         
         const uniqueBatches = Array.from(new Set(data.map((l: any) => l.batchId).filter(Boolean))) as string[];
-        setBatches(uniqueBatches);
+        
+        // Sort: Pinned first, then by date (if possible)
+        const pinned = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('pinned_batches') || '[]') : [];
+        const sortedBatches = uniqueBatches.sort((a, b) => {
+          const aPinned = pinned.includes(a);
+          const bPinned = pinned.includes(b);
+          if (aPinned && !bPinned) return -1;
+          if (!aPinned && bPinned) return 1;
+          return b.localeCompare(a); 
+        });
+
+        setBatches(sortedBatches);
         if (uniqueBatches.length > 0 && !activeBatch) {
           setActiveBatch(uniqueBatches[0]);
         }
@@ -430,21 +441,28 @@ function ClientDemoContent() {
                         const pinned = JSON.parse(localStorage.getItem('pinned_batches') || '[]');
                         if (!pinned.includes(batch)) {
                           localStorage.setItem('pinned_batches', JSON.stringify([batch, ...pinned]));
-                          fetchMyLeads(clientData.id);
+                        } else {
+                          // Unpin if already pinned
+                          localStorage.setItem('pinned_batches', JSON.stringify(pinned.filter((b: string) => b !== batch)));
                         }
+                        fetchMyLeads(clientData.id);
                         setOpenMenuId(null);
                       }}
                     >
-                      <Pin size={14} color="#666"/> Pin to top
+                      <Pin size={14} color={JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) ? '#10b981' : '#666'}/> 
+                      {JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) ? 'Unpin from top' : 'Pin to top'}
                     </button>
                     
                     <button 
                       style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#1a1a1a', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px', transition: 'background 0.2s' }} 
                       onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'} 
                       onMouseOut={e => e.currentTarget.style.background = 'transparent'} 
-                      onClick={() => { 
+                      onClick={(e) => { 
                         navigator.clipboard.writeText(window.location.href);
-                        setOpenMenuId(null);
+                        const btn = e.currentTarget;
+                        const originalText = btn.innerHTML;
+                        btn.innerHTML = '<span style="color: #10b981">✓ Copied!</span>';
+                        setTimeout(() => { btn.innerHTML = originalText; setOpenMenuId(null); }, 1500);
                       }}
                     >
                       <Share2 size={14} color="#666"/> Share via link
