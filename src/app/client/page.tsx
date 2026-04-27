@@ -224,36 +224,46 @@ function ClientDemoContent() {
       alert("Please enter a phone number to test.");
       return;
     }
-    await saveScript();
     
-    // Add the test number as a lead and call it
     setLoading(true);
     try {
-      const fullNumber = `${countryCode}${testNumber}`;
+      // 1. Save script
+      await saveScript();
+      
+      // 2. Create lead for test
       const leadRes = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          userId: clientData?.id, 
-          leads: [{ name: 'Test Client', phone: fullNumber }],
-          batchId: activeBatch || 'Test_Run'
+          userId: clientData.id,
+          phone: countryCode + testNumber,
+          name: 'Test Client',
+          batchId: 'Test_Run'
         })
       });
-      
       const leadData = await leadRes.json();
-      if (leadData.leadIds && leadData.leadIds[0]) {
-        await fetch('/api/call', {
+      
+      if (leadData.id) {
+        console.log("Initiating call for lead:", leadData.id);
+        const callRes = await fetch('/api/call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leadId: leadData.leadIds[0] })
+          body: JSON.stringify({ leadId: leadData.id })
         });
-        alert('Calling ' + fullNumber + ' now!');
+        const callData = await callRes.json();
+        if (!callRes.ok) throw new Error(callData.error || "Call failed to start");
+        
+        alert("Call initiated! Your phone should ring in a few seconds.");
         await fetchMyLeads(clientData.id);
+      } else {
+        throw new Error("Failed to create test lead record");
       }
-    } catch (err) {
-      alert('Error starting call.');
+    } catch (err: any) {
+      console.error("Test Call Error:", err);
+      alert("Error: " + err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleRunBatch = async () => {
@@ -267,21 +277,32 @@ function ClientDemoContent() {
     await saveScript();
     
     let count = 0;
+    // Sequential calling for better visual feedback and stability
     for (const lead of uncalledLeads) {
       try {
+        console.log(`Starting call ${count + 1}/${uncalledLeads.length} to ${lead.phone}`);
         const res = await fetch('/api/call', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ leadId: lead.id })
         });
-        if (res.ok) count++;
-        // Refresh leads frequently to show progress
-        if (count % 2 === 0) await fetchMyLeads(clientData.id);
-      } catch (e) { console.error(e); }
+        
+        if (res.ok) {
+          count++;
+          // Refresh leads to show the one moving to 'Calling'
+          await fetchMyLeads(clientData.id);
+          // Small delay between initiations for API stability
+          await new Promise(r => setTimeout(r, 1500));
+        } else {
+          const errorData = await res.json();
+          console.error(`Call failed for ${lead.phone}:`, errorData.error);
+        }
+      } catch (e) { 
+        console.error("Batch Call Error:", e);
+      }
     }
     
-    alert(`Initiated ${count} calls! They will appear in the 'Pending/Busy' column as they start.`);
-    await fetchMyLeads(clientData.id);
+    alert(`Initiated ${count} calls! Status will update automatically as AI finishes conversations.`);
     setLoading(false);
   };
 
