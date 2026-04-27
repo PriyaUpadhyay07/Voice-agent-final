@@ -45,6 +45,7 @@ function ClientDemoContent() {
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, type: string}[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [platformInfo, setPlatformInfo] = useState<any>(null);
+  const [selectedTranscript, setSelectedTranscript] = useState<{name: string, transcript: string, summary: string} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -337,8 +338,6 @@ function ClientDemoContent() {
   const pendingCount = currentBatchLeads.filter(l => l.status === 'uncalled').length;
   const busyCount = currentBatchLeads.filter(l => l.status === 'busy' || l.status === 'calling').length;
   
-  const [selectedTranscript, setSelectedTranscript] = useState<{name: string, transcript: string, summary: string} | null>(null);
-
 
 
   return (
