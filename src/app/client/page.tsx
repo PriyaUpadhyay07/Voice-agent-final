@@ -277,32 +277,29 @@ function ClientDemoContent() {
     await saveScript();
     
     let count = 0;
-    // Sequential calling for better visual feedback and stability
-    for (const lead of uncalledLeads) {
-      try {
-        console.log(`Starting call ${count + 1}/${uncalledLeads.length} to ${lead.phone}`);
-        const res = await fetch('/api/call', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ leadId: lead.id })
-        });
-        
-        if (res.ok) {
-          count++;
-          // Refresh leads to show the one moving to 'Calling'
-          await fetchMyLeads(clientData.id);
-          // Small delay between initiations for API stability
-          await new Promise(r => setTimeout(r, 1500));
-        } else {
-          const errorData = await res.json();
-          console.error(`Call failed for ${lead.phone}:`, errorData.error);
-        }
-      } catch (e) { 
-        console.error("Batch Call Error:", e);
-      }
+    // Parallel batch calling (5 at a time) for high speed and stability
+    const chunkSize = 5;
+    for (let i = 0; i < uncalledLeads.length; i += chunkSize) {
+      const chunk = uncalledLeads.slice(i, i + chunkSize);
+      console.log(`Starting parallel batch ${Math.floor(i/chunkSize) + 1}...`);
+      
+      const results = await Promise.all(chunk.map(async (lead) => {
+        try {
+          const res = await fetch('/api/call', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ leadId: lead.id })
+          });
+          return res.ok;
+        } catch (e) { return false; }
+      }));
+      
+      count += results.filter(Boolean).length;
+      // Refresh dashboard after each chunk to show progress
+      await fetchMyLeads(clientData.id);
     }
     
-    alert(`Initiated ${count} calls! Status will update automatically as AI finishes conversations.`);
+    alert(`Successfully initiated ${count} calls in fast batches! Status will update as conversations finish.`);
     setLoading(false);
   };
 
