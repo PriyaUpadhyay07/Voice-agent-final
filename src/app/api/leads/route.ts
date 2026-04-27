@@ -100,3 +100,22 @@ export async function DELETE(request: NextRequest) {
 
   return NextResponse.json({ count: deleted.count });
 }
+
+export async function PATCH(request: NextRequest) {
+  const session = await auth();
+  if (!session || !session.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await request.json();
+  const { userId, oldBatchId, newBatchId } = body;
+
+  if (!oldBatchId || !newBatchId || !userId) {
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  }
+
+  const updated = await prisma.lead.updateMany({
+    where: { userId, batchId: oldBatchId },
+    data: { batchId: newBatchId },
+  });
+
+  return NextResponse.json({ count: updated.count });
+}

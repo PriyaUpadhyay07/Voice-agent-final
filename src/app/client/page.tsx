@@ -399,23 +399,72 @@ function ClientDemoContent() {
 
                 {openMenuId === batch && (
                   <div style={{ 
-                    position: 'absolute', left: '100%', top: '0', zIndex: 50, marginLeft: '8px',
-                    background: '#212121', border: '1px solid #333', borderRadius: '12px', padding: '6px', 
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)', minWidth: '180px', color: 'white' 
+                    position: 'absolute', left: '100%', top: '0', zIndex: 100, marginLeft: '8px',
+                    background: 'white', border: '1px solid #e5e5e5', borderRadius: '12px', padding: '6px', 
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.08)', minWidth: '190px', color: '#1a1a1a' 
                   }}>
-                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Rename clicked'); setOpenMenuId(null); }}><Edit2 size={14}/> Rename</button>
-                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Pin clicked'); setOpenMenuId(null); }}><Pin size={14}/> Pin to top</button>
-                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={() => { alert('Share clicked'); setOpenMenuId(null); }}><Share2 size={14}/> Share via link</button>
-                    <div style={{ height: '1px', background: '#333', margin: '6px 0' }}></div>
-                    <button style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px' }} onMouseOver={e => e.currentTarget.style.background = '#333'} onMouseOut={e => e.currentTarget.style.background = 'transparent'} onClick={async () => { 
-                      if(confirm('Delete this batch?')) {
+                    <button 
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#1a1a1a', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px', transition: 'background 0.2s' }} 
+                      onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'} 
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'} 
+                      onClick={async () => { 
+                        const newName = prompt('Enter new batch name:', batch);
+                        if (newName && newName !== batch) {
+                          await fetch('/api/leads', { 
+                            method: 'PATCH', 
+                            body: JSON.stringify({ userId: clientData.id, oldBatchId: batch, newBatchId: newName }) 
+                          });
+                          await fetchMyLeads(clientData.id);
+                        }
+                        setOpenMenuId(null);
+                      }}
+                    >
+                      <Edit2 size={14} color="#666"/> Rename
+                    </button>
+                    
+                    <button 
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#1a1a1a', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px', transition: 'background 0.2s' }} 
+                      onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'} 
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'} 
+                      onClick={() => { 
+                        const pinned = JSON.parse(localStorage.getItem('pinned_batches') || '[]');
+                        if (!pinned.includes(batch)) {
+                          localStorage.setItem('pinned_batches', JSON.stringify([batch, ...pinned]));
+                          fetchMyLeads(clientData.id);
+                        }
+                        setOpenMenuId(null);
+                      }}
+                    >
+                      <Pin size={14} color="#666"/> Pin to top
+                    </button>
+                    
+                    <button 
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#1a1a1a', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px', transition: 'background 0.2s' }} 
+                      onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'} 
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'} 
+                      onClick={() => { 
+                        navigator.clipboard.writeText(window.location.href);
+                        setOpenMenuId(null);
+                      }}
+                    >
+                      <Share2 size={14} color="#666"/> Share via link
+                    </button>
+                    
+                    <div style={{ height: '1px', background: '#eee', margin: '6px 0' }}></div>
+                    
+                    <button 
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px', transition: 'background 0.2s' }} 
+                      onMouseOver={e => e.currentTarget.style.background = '#fee2e2'} 
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'} 
+                      onClick={async () => { 
                         await fetch('/api/leads?batchId=' + batch + '&userId=' + clientData.id, { method: 'DELETE' });
                         await fetchMyLeads(clientData.id);
                         if (activeBatch === batch) setActiveBatch(null);
                         setOpenMenuId(null);
-                      }
-                    }}><Trash2 size={14}/> Delete</button>
-
+                      }}
+                    >
+                      <Trash2 size={14}/> Delete
+                    </button>
                   </div>
                 )}
               </div>
