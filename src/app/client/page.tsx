@@ -276,7 +276,7 @@ function ClientDemoContent() {
 
   // Pre-Login Screen
   if (loading && !magicLinkSent) {
-    return <div className="flex-center h-screen"><Loader2 className="spinner" size={32} /></div>;
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'white' }}>Checking session...</div>;
   }
 
   if (!isLoggedIn || !clientData) {
