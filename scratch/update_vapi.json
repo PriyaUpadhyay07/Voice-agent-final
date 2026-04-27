@@ -1,0 +1,13 @@
+{
+  "gateways": [
+    {
+      "ip": "ai-priya-agent.sip.signalwire.com",
+      "inboundEnabled": false,
+      "outboundProtocol": "udp"
+    }
+  ],
+  "outboundAuthenticationPlan": {
+    "authUsername": "dd9defbb-1449-4a44-89f8-7d25b2e048de",
+    "authPassword": "PT29ffe4a489f1801030099e11307e6cd33759302c554dc34d"
+  }
+}

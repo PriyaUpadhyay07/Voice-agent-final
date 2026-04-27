@@ -70,16 +70,19 @@ function ClientDemoContent() {
       if (session?.user?.role === 'ADMIN' && adminRequestedUserId) {
         const clientsRes = await fetch('/api/clients');
         const clients = await clientsRes.json();
-        const targetClient = clients.find((c: any) => c.id === adminRequestedUserId);
         
-        if (targetClient) {
-          setEmail(targetClient.email);
-          setClientData(targetClient);
-          setScript(targetClient.script || targetClient.script === '' ? targetClient.script : script);
-          await fetchMyLeads(targetClient.id);
-          setIsLoggedIn(true);
-          setLoading(false);
-          return;
+        if (Array.isArray(clients)) {
+          const targetClient = clients.find((c: any) => c.id === adminRequestedUserId);
+          
+          if (targetClient) {
+            setEmail(targetClient.email);
+            setClientData(targetClient);
+            setScript(targetClient.script || targetClient.script === '' ? targetClient.script : script);
+            await fetchMyLeads(targetClient.id);
+            setIsLoggedIn(true);
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -89,7 +92,11 @@ function ClientDemoContent() {
         // Fetch client data
         const clientsRes = await fetch('/api/clients');
         const clients = await clientsRes.json();
-        let me = clients.find((c: any) => (c.email === session.user.email) || (adminRequestedUserId && c.id === adminRequestedUserId));
+        let me = null;
+        
+        if (Array.isArray(clients)) {
+          me = clients.find((c: any) => (c.email === session.user.email) || (adminRequestedUserId && c.id === adminRequestedUserId));
+        }
         
         if (!me) {
           // Auto-create dummy client data for demo if not in DB yet
@@ -165,7 +172,7 @@ function ClientDemoContent() {
         const res = await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: clientData.id, leads: leadsToAdd, batchId: batchName })
+          body: JSON.stringify({ userId: clientData?.id, leads: leadsToAdd, batchId: batchName })
         });
         
         if (res.ok) {
@@ -185,6 +192,7 @@ function ClientDemoContent() {
 
   const saveScript = async () => {
     try {
+      if (!clientData?.id) return;
       await fetch(`/api/clients/${clientData.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -208,7 +216,7 @@ function ClientDemoContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          userId: clientData.id, 
+          userId: clientData?.id, 
           leads: [{ name: 'Test Client', phone: fullNumber }],
           batchId: activeBatch || 'Test_Run'
         })
