@@ -380,7 +380,6 @@ function ClientDemoContent() {
               <div 
                 key={batch} 
                 style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '2px' }}
-                onMouseLeave={() => setOpenMenuId(null)}
               >
                 <button 
                   key={batch} 
