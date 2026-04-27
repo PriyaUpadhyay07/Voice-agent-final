@@ -389,9 +389,12 @@ function ClientDemoContent() {
                   style={{ fontSize: '12px' }}
                 >
                   <History size={14} />
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                     {typeof batch === 'string' ? batch.replace('Batch_', '').replace(/_/g, ' ') : 'Unnamed Batch'}
                   </span>
+                  {typeof window !== 'undefined' && JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) && (
+                    <Pin size={10} color="#10b981" style={{ marginLeft: '4px' }} fill="#10b981" />
+                  )}
                 </button>
                 
                 <button 
@@ -451,21 +454,6 @@ function ClientDemoContent() {
                     >
                       <Pin size={14} color={JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) ? '#10b981' : '#666'}/> 
                       {JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) ? 'Unpin from top' : 'Pin to top'}
-                    </button>
-                    
-                    <button 
-                      style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', color: '#1a1a1a', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '8px', transition: 'background 0.2s' }} 
-                      onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'} 
-                      onMouseOut={e => e.currentTarget.style.background = 'transparent'} 
-                      onClick={(e) => { 
-                        navigator.clipboard.writeText(window.location.href);
-                        const btn = e.currentTarget;
-                        const originalText = btn.innerHTML;
-                        btn.innerHTML = '<span style="color: #10b981">✓ Copied!</span>';
-                        setTimeout(() => { btn.innerHTML = originalText; setOpenMenuId(null); }, 1500);
-                      }}
-                    >
-                      <Share2 size={14} color="#666"/> Share via link
                     </button>
                     
                     <div style={{ height: '1px', background: '#eee', margin: '6px 0' }}></div>
