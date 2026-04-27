@@ -357,8 +357,8 @@ function ClientDemoContent() {
       {/* SIDEBAR - HISTORY */}
       <aside style={{ width: '260px', borderRight: '1px solid hsl(var(--border))', display: 'flex', flexDirection: 'column', background: 'rgba(255,255,255,0.02)' }}>
         <div style={{ padding: '1rem', borderBottom: '1px solid hsl(var(--border))' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Phone size={18} /> VoiceAgent
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Phone size={22} /> VoiceAgent
           </h2>
         </div>
         
@@ -368,7 +368,7 @@ function ClientDemoContent() {
             className="btn-outline" 
             style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}
           >
-            <Plus size={16} /> New Leads
+            <Plus size={20} /> New Leads
           </button>
           
           <div style={{ fontSize: '0.8rem', color: 'hsl(var(--muted-foreground))', fontWeight: '600', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -386,15 +386,16 @@ function ClientDemoContent() {
                   key={batch} 
                   onClick={() => setActiveBatch(batch)} 
                   className={`sidebar-link ${activeBatch === batch ? 'active' : ''}`}
-                  style={{ fontSize: '12px' }}
+                  style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '10px' }}
                 >
-                  <History size={14} />
+                  {typeof window !== 'undefined' && JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) ? (
+                    <Pin size={18} color="#10b981" fill="#10b981" />
+                  ) : (
+                    <History size={18} />
+                  )}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
                     {typeof batch === 'string' ? batch.replace('Batch_', '').replace(/_/g, ' ') : 'Unnamed Batch'}
                   </span>
-                  {typeof window !== 'undefined' && JSON.parse(localStorage.getItem('pinned_batches') || '[]').includes(batch) && (
-                    <Pin size={10} color="#10b981" style={{ marginLeft: '4px' }} fill="#10b981" />
-                  )}
                 </button>
                 
                 <button 
@@ -408,7 +409,7 @@ function ClientDemoContent() {
                   onMouseOver={e => e.currentTarget.style.opacity = '1'}
                   onMouseOut={e => e.currentTarget.style.opacity = '0.7'}
                 >
-                  <MoreHorizontal size={16} />
+                  <MoreHorizontal size={20} />
                 </button>
 
                 {openMenuId === batch && (
