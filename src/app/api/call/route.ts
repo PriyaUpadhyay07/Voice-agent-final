@@ -45,8 +45,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot call SIP addresses.' }, { status: 400 });
     }
 
+    console.log(`[DEBUG] Initiating call for Lead: ${leadId} (${lead.phone})`);
+
     // Check credits
     if (lead.user.creditsMinutes < MIN_CREDITS) {
+      console.warn(`[DEBUG] Insufficient credits for user: ${lead.user.email}`);
       return NextResponse.json({
         error: `Insufficient credits. Current: ${lead.user.creditsMinutes.toFixed(0)} minutes`,
       }, { status: 402 });
@@ -60,34 +63,41 @@ export async function POST(request: NextRequest) {
 
     // Format phone number
     const formattedPhone = formatPhoneNumber(lead.phone);
+    console.log(`[DEBUG] Formatted phone: ${formattedPhone}`);
 
     // Create call via VAPI
-    const vapiResponse = await createVapiCall({
-      phoneNumber: formattedPhone,
-      leadName: lead.name,
-      leadCompany: lead.company || undefined,
-      customScript: lead.user.script || undefined,
-    });
+    try {
+      const vapiResponse = await createVapiCall({
+        phoneNumber: formattedPhone,
+        leadName: lead.name,
+        leadCompany: lead.company || undefined,
+        customScript: lead.user.script || undefined,
+      });
+      console.log(`[DEBUG] Vapi success! ID: ${vapiResponse.id}`);
 
-    // Create call record
-    const callRecord = await prisma.call.create({
-      data: {
-        leadId,
-        status: 'in-progress',
+      // Create call record
+      const callRecord = await prisma.call.create({
+        data: {
+          leadId,
+          status: 'in-progress',
+          vapiCallId: vapiResponse.id,
+          duration: 0,
+          costDeducted: 0,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        callId: callRecord.id,
         vapiCallId: vapiResponse.id,
-        duration: 0,
-        costDeducted: 0,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      callId: callRecord.id,
-      vapiCallId: vapiResponse.id,
-    });
-
-  } catch (error: any) {
-    console.error('Call API Error:', error);
-    return NextResponse.json({ error: `Error: ${error.message}` }, { status: 500 });
-  }
+      });
+    } catch (vapiErr: any) {
+      console.error('[DEBUG] Vapi Initiation Error:', vapiErr.message);
+      // Revert status if initiation failed
+      await prisma.lead.update({
+        where: { id: leadId },
+        data: { status: 'uncalled' },
+      });
+      return NextResponse.json({ error: vapiErr.message }, { status: 500 });
+    }
 }
