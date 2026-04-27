@@ -20,7 +20,7 @@ type Lead = {
 
 export default function ClientDemoPage() {
   return (
-    <Suspense fallback={<div className="flex-center h-screen"><Loader2 className="spinner" /></div>}>
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'white' }}>Loading...</div>}>
       <ClientDemoContent />
     </Suspense>
   );
@@ -55,9 +55,15 @@ function ClientDemoContent() {
 
   const fetchPlatformInfo = async () => {
     try {
-      const res = await fetch('/api/platform/balance');
-      const data = await res.json();
-      setPlatformInfo(data);
+      try {
+        const res = await fetch('/api/platform/balance');
+        if (res.ok) {
+          const data = await res.json();
+          setPlatformInfo(data);
+        }
+      } catch (e) {
+        console.error("Platform balance fetch failed", e);
+      }
     } catch (e) {}
   };
 
@@ -367,16 +373,15 @@ function ClientDemoContent() {
                 onMouseLeave={() => setOpenMenuId(null)}
               >
                 <button 
-                  onClick={() => setActiveBatch(batch)}
-                  style={{ 
-                    flex: 1, textAlign: 'left', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius)', border: 'none',
-                    background: activeBatch === batch ? 'hsl(var(--accent))' : 'transparent',
-                    color: activeBatch === batch ? 'hsl(var(--accent-foreground))' : 'hsl(var(--foreground))',
-                    cursor: 'pointer', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    paddingRight: '2rem'
-                  }}
+                  key={batch} 
+                  onClick={() => setActiveBatch(batch)} 
+                  className={`sidebar-link ${activeBatch === batch ? 'active' : ''}`}
+                  style={{ fontSize: '12px' }}
                 >
-                  {batch.replace('Batch_', '').replace('_', ' ')}
+                  <History size={14} />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {typeof batch === 'string' ? batch.replace('Batch_', '').replace(/_/g, ' ') : 'Unnamed Batch'}
+                  </span>
                 </button>
                 
                 <button 
