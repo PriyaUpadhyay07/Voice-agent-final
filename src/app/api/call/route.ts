@@ -100,4 +100,8 @@ export async function POST(request: NextRequest) {
       });
       return NextResponse.json({ error: vapiErr.message }, { status: 500 });
     }
+  } catch (err: any) {
+    console.error('[DEBUG] API Error:', err.message);
+    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+  }
 }
