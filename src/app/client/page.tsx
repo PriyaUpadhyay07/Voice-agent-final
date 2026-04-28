@@ -75,7 +75,7 @@ function ClientDemoContent() {
       const adminRequestedUserId = searchParams.get('userId');
       
       // Smart Solution: If Admin is logged in, allow viewing any client portal via userId param
-      if (session?.user?.role === 'ADMIN' && adminRequestedUserId) {
+      if ((session?.user as any)?.role === 'ADMIN' && adminRequestedUserId) {
         const clientsRes = await fetch('/api/clients');
         const clients = await clientsRes.json();
         
@@ -103,7 +103,7 @@ function ClientDemoContent() {
         let me = null;
         
         if (Array.isArray(clients)) {
-          me = clients.find((c: any) => (c.email === session.user.email) || (adminRequestedUserId && c.id === adminRequestedUserId));
+          me = clients.find((c: any) => (c.email === (session?.user as any)?.email) || (adminRequestedUserId && c.id === adminRequestedUserId));
         }
         
         if (!me) {

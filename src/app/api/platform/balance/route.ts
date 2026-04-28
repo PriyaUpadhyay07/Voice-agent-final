@@ -13,7 +13,7 @@ export async function GET() {
 
   try {
     // Check if user is admin
-    const isAdmin = session.user.role === 'ADMIN';
+    const isAdmin = (session.user as any).role === 'ADMIN';
     
     let platformData = {
       signalWireStatus: 'Active',
