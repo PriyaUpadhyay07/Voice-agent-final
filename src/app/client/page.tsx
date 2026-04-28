@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
 import { loginWithEmail, getClientSession } from './actions';
+import * as XLSX from 'xlsx';
 
 type Lead = {
   id: string;
