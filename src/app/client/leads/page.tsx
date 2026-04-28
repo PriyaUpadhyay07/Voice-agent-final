@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { Upload, Activity, FileText, Wallet, LogOut, Plus, Trash2, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 type Lead = {
   id: string;
@@ -87,48 +88,101 @@ export default function ClientLeadsPage() {
     if (!file || !client) return;
 
     setActionLoading(true);
-    const text = await file.text();
-    const lines = text.split('\n').filter(l => l.trim());
+    try {
+      let leads: { name: string; phone: string; company?: string }[] = [];
 
-    // Expect CSV: name,phone,company (skip header if present)
-    const startIdx = lines[0].toLowerCase().includes('name') ? 1 : 0;
-    const leads: { name: string; phone: string; company?: string }[] = [];
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-    for (let i = startIdx; i < lines.length; i++) {
-      const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-      if (parts.length >= 2) {
-        leads.push({
-          name: parts[0],
-          phone: parts[1],
-          company: parts[2] || undefined,
-        });
+        leads = jsonData.map(row => {
+          // Try to find name and phone in any column
+          const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name')) || Object.keys(row)[0];
+          const phoneKey = Object.keys(row).find(k => k.toLowerCase().includes('phone') || k.toLowerCase().includes('mobile') || k.toLowerCase().includes('number') || k.toLowerCase().includes('contact')) || Object.keys(row)[1];
+          const companyKey = Object.keys(row).find(k => k.toLowerCase().includes('company') || k.toLowerCase().includes('org')) || Object.keys(row)[2];
+
+          return {
+            name: String(row[nameKey] || ''),
+            phone: String(row[phoneKey] || ''),
+            company: row[companyKey] ? String(row[companyKey]) : undefined
+          };
+        }).filter(l => l.name && l.phone);
+      } else {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        
+        if (lines.length === 0) throw new Error('File is empty');
+
+        const firstLine = lines[0];
+        const delimiter = firstLine.includes(';') && !firstLine.includes(',') ? ';' : ',';
+
+        const parseCSVLine = (line: string) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === delimiter && !inQuotes) {
+              result.push(current.trim());
+              current = '';
+            } else current += char;
+          }
+          result.push(current.trim());
+          return result.map(s => s.replace(/^"|"$/g, ''));
+        };
+
+        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+        const nameIdx = headers.findIndex(h => h.includes('name'));
+        const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('number') || h.includes('contact'));
+        const companyIdx = headers.findIndex(h => h.includes('company') || h.includes('org'));
+
+        const startIdx = (nameIdx !== -1 || phoneIdx !== -1) ? 1 : 0;
+        const finalNameIdx = nameIdx !== -1 ? nameIdx : 0;
+        const finalPhoneIdx = phoneIdx !== -1 ? phoneIdx : 1;
+        const finalCompanyIdx = companyIdx !== -1 ? companyIdx : 2;
+
+        for (let i = startIdx; i < lines.length; i++) {
+          const parts = parseCSVLine(lines[i]);
+          if (parts.length >= 2) {
+            const name = parts[finalNameIdx];
+            const phone = parts[finalPhoneIdx];
+            if (name && phone) {
+              leads.push({ name, phone, company: parts[finalCompanyIdx] || undefined });
+            }
+          }
+        }
       }
-    }
 
-    if (leads.length === 0) {
-      setUploadResult({ type: 'error', message: 'No valid leads found in CSV. Format: name,phone,company' });
+      if (leads.length === 0) {
+        setUploadResult({ type: 'error', message: 'No valid leads found. Please check columns.' });
+        return;
+      }
+
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUploadResult({ type: 'success', message: `${data.count} leads uploaded successfully!` });
+        await fetchClient();
+      } else {
+        const data = await res.json();
+        setUploadResult({ type: 'error', message: data.error || 'Upload failed' });
+      }
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      setUploadResult({ type: 'error', message: error.message || 'Error reading file.' });
+    } finally {
       setActionLoading(false);
-      return;
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setTimeout(() => setUploadResult(null), 5000);
     }
-
-    const res = await fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leads }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      setUploadResult({ type: 'success', message: `${data.count} leads uploaded successfully!` });
-      await fetchClient();
-    } else {
-      const data = await res.json();
-      setUploadResult({ type: 'error', message: data.error || 'Failed to upload leads' });
-    }
-
-    setActionLoading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setTimeout(() => setUploadResult(null), 5000);
   }
 
   async function deleteLead(id: string) {
@@ -272,8 +326,8 @@ export default function ClientLeadsPage() {
               <Plus size={18} /> Add Lead
             </button>
             <label className="btn-outline" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Upload size={18} /> Upload CSV
-              <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVUpload} style={{ display: 'none' }} />
+              <Upload size={18} /> Upload Leads
+              <input ref={fileInputRef} type="file" accept=".csv, .xlsx, .xls" onChange={handleCSVUpload} style={{ display: 'none' }} />
             </label>
           </div>
         </div>

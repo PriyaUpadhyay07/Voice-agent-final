@@ -8,6 +8,7 @@ import {
   Home, X
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
+import * as XLSX from 'xlsx';
 
 type Call = {
   id: string;
@@ -130,29 +131,101 @@ export default function AdminLeadsPage() {
   async function handleCSVUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !addFormData.userId) { alert('Select a client first'); return; }
+
     setAddLoading(true);
-    const text = await file.text();
-    const lines = text.split('\n').filter(l => l.trim());
-    const startIdx = lines[0].toLowerCase().includes('name') ? 1 : 0;
-    const leadsToAdd: { name: string; phone: string; company?: string }[] = [];
-    for (let i = startIdx; i < lines.length; i++) {
-      const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-      if (parts.length >= 2) leadsToAdd.push({ name: parts[0], phone: parts[1], company: parts[2] || undefined });
+    try {
+      let leadsToAdd: { name: string; phone: string; company?: string }[] = [];
+
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        leadsToAdd = jsonData.map(row => {
+          const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name')) || Object.keys(row)[0];
+          const phoneKey = Object.keys(row).find(k => k.toLowerCase().includes('phone') || k.toLowerCase().includes('mobile') || k.toLowerCase().includes('number') || k.toLowerCase().includes('contact')) || Object.keys(row)[1];
+          const companyKey = Object.keys(row).find(k => k.toLowerCase().includes('company') || k.toLowerCase().includes('org')) || Object.keys(row)[2];
+
+          return {
+            name: String(row[nameKey] || ''),
+            phone: String(row[phoneKey] || ''),
+            company: row[companyKey] ? String(row[companyKey]) : undefined
+          };
+        }).filter(l => l.name && l.phone);
+      } else {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        
+        if (lines.length === 0) throw new Error('File is empty');
+
+        const firstLine = lines[0];
+        const delimiter = firstLine.includes(';') && !firstLine.includes(',') ? ';' : ',';
+
+        const parseCSVLine = (line: string) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === delimiter && !inQuotes) {
+              result.push(current.trim());
+              current = '';
+            } else current += char;
+          }
+          result.push(current.trim());
+          return result.map(s => s.replace(/^"|"$/g, ''));
+        };
+
+        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+        const nameIdx = headers.findIndex(h => h.includes('name'));
+        const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('number') || h.includes('contact'));
+        const companyIdx = headers.findIndex(h => h.includes('company') || h.includes('org'));
+
+        const startIdx = (nameIdx !== -1 || phoneIdx !== -1) ? 1 : 0;
+        const finalNameIdx = nameIdx !== -1 ? nameIdx : 0;
+        const finalPhoneIdx = phoneIdx !== -1 ? phoneIdx : 1;
+        const finalCompanyIdx = companyIdx !== -1 ? companyIdx : 2;
+
+        for (let i = startIdx; i < lines.length; i++) {
+          const parts = parseCSVLine(lines[i]);
+          if (parts.length >= 2) {
+            const name = parts[finalNameIdx];
+            const phone = parts[finalPhoneIdx];
+            if (name && phone) {
+              leadsToAdd.push({ name, phone, company: parts[finalCompanyIdx] || undefined });
+            }
+          }
+        }
+      }
+
+      if (leadsToAdd.length === 0) {
+        alert('No valid leads. Please check columns.');
+        return;
+      }
+
+      const batchName = file.name.replace(/\.[^/.]+$/, "") + '_' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: addFormData.userId, leads: leadsToAdd, batchId: batchName }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        alert(`✅ ${data.count} leads uploaded!`);
+        await fetchData();
+      } else {
+        alert('Upload failed');
+      }
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      alert(error.message || 'Error reading file.');
+    } finally {
+      setAddLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-    if (leadsToAdd.length === 0) { alert('No valid leads. Format: name,phone,company'); setAddLoading(false); return; }
-    const batchName = file.name.replace('.csv', '') + '_' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const res = await fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: addFormData.userId, leads: leadsToAdd, batchId: batchName }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      alert(`✅ ${data.count} leads uploaded!`);
-      await fetchData();
-    } else { alert('Upload failed'); }
-    setAddLoading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function updateStatus(id: string, status: string, rejectReason?: string) {
@@ -263,9 +336,9 @@ export default function AdminLeadsPage() {
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={() => setShowAddForm(!showAddForm)} className="btn btn-primary"><Plus size={16} /> Add Lead</button>
-            <input type="file" ref={fileInputRef} onChange={handleCSVUpload} accept=".csv" style={{ display: 'none' }} />
+            <input type="file" ref={fileInputRef} onChange={handleCSVUpload} accept=".csv, .xlsx, .xls" style={{ display: 'none' }} />
             <button onClick={() => fileInputRef.current?.click()} className="btn btn-outline" disabled={addLoading}>
-              <Upload size={16} /> {addLoading ? 'Uploading...' : 'Upload CSV'}
+              <Upload size={16} /> {addLoading ? 'Uploading...' : 'Upload Leads'}
             </button>
           </div>
         </div>
