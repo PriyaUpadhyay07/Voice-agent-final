@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
 
     console.log(`[DEBUG] Initiating call for Lead: ${leadId} (${lead.phone})`);
 
-    // Check credits
-    if (lead.user.creditsMinutes < MIN_CREDITS) {
+    // Check credits (Allow if either minutes or wallet balance is available)
+    if (lead.user.creditsMinutes < MIN_CREDITS && lead.user.walletAmount < COST_PER_MINUTE) {
       console.warn(`[DEBUG] Insufficient credits for user: ${lead.user.email}`);
       return NextResponse.json({
-        error: `Insufficient credits. Current: ${lead.user.creditsMinutes.toFixed(0)} minutes`,
+        error: `Insufficient credits. Current: ${lead.user.creditsMinutes.toFixed(0)} minutes or $${lead.user.walletAmount.toFixed(2)}`,
       }, { status: 402 });
     }
 

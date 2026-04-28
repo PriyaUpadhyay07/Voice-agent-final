@@ -277,29 +277,49 @@ function ClientDemoContent() {
     await saveScript();
     
     let count = 0;
+    let errors: string[] = [];
+
     // Parallel batch calling (5 at a time) for high speed and stability
     const chunkSize = 5;
     for (let i = 0; i < uncalledLeads.length; i += chunkSize) {
       const chunk = uncalledLeads.slice(i, i + chunkSize);
-      console.log(`Starting parallel batch ${Math.floor(i/chunkSize) + 1}...`);
       
-      const results = await Promise.all(chunk.map(async (lead) => {
+      const chunkResults = await Promise.all(chunk.map(async (lead) => {
         try {
           const res = await fetch('/api/call', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ leadId: lead.id })
           });
-          return res.ok;
-        } catch (e) { return false; }
+          if (res.ok) {
+            count++;
+            return { success: true };
+          } else {
+            const errData = await res.json();
+            return { success: false, error: errData.error || `HTTP ${res.status}` };
+          }
+        } catch (e: any) { 
+          return { success: false, error: e.message || "Network error" }; 
+        }
       }));
       
-      count += results.filter(Boolean).length;
-      // Refresh dashboard after each chunk to show progress
+      chunkResults.forEach(r => {
+        if (!r.success && r.error) errors.push(r.error);
+      });
+
+      // Refresh dashboard after each chunk
       await fetchMyLeads(clientData.id);
     }
     
-    alert(`Successfully initiated ${count} calls in fast batches! Status will update as conversations finish.`);
+    if (count > 0) {
+      alert(`Successfully initiated ${count} calls! Status will update as conversations finish.`);
+    }
+    
+    if (errors.length > 0) {
+      // Show unique errors
+      const uniqueErrors = Array.from(new Set(errors));
+      alert(`Some calls failed:\n${uniqueErrors.join('\n')}`);
+    }
     setLoading(false);
   };
 
