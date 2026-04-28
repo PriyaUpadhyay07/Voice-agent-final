@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/wallet — add credits to a client wallet
 export async function POST(request: NextRequest) {
   const body = await request.json();
