@@ -3,6 +3,8 @@ import prisma from '../../../../lib/db';
 import { syncCallTranscript } from '../../../../lib/elevenlabs';
 import { auth } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/clients/[id]
 export async function GET(
   _request: NextRequest,

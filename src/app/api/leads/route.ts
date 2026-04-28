@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '../../../lib/db';
 import { auth } from '@/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/leads
 export async function GET(request: NextRequest) {
   const session = await auth();
