@@ -169,24 +169,79 @@ function ClientDemoContent() {
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !clientData) return;
     
     setLoading(true);
-    const text = await file.text();
-    const lines = text.split('\n').filter(l => l.trim());
-    const leadsToAdd: any[] = [];
-    
-    // Simple CSV parser
-    const startIdx = lines[0].toLowerCase().includes('name') ? 1 : 0;
-    for (let i = startIdx; i < lines.length; i++) {
-      const parts = lines[i].split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-      if (parts.length >= 2) leadsToAdd.push({ name: parts[0], phone: parts[1] });
-    }
+    try {
+      let leadsToAdd: any[] = [];
 
-    if (leadsToAdd.length > 0) {
-      const batchName = `Batch_${new Date().toLocaleDateString().replace(/\//g, '-')}_${new Date().toLocaleTimeString().replace(/:/g, '-')}`;
-      
-      try {
+      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data);
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+        leadsToAdd = jsonData.map(row => {
+          const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name')) || Object.keys(row)[0];
+          const phoneKey = Object.keys(row).find(k => k.toLowerCase().includes('phone') || k.toLowerCase().includes('mobile') || k.toLowerCase().includes('number') || k.toLowerCase().includes('contact')) || Object.keys(row)[1];
+          const companyKey = Object.keys(row).find(k => k.toLowerCase().includes('company') || k.toLowerCase().includes('org')) || Object.keys(row)[2];
+
+          return {
+            name: String(row[nameKey] || ''),
+            phone: String(row[phoneKey] || ''),
+            company: row[companyKey] ? String(row[companyKey]) : undefined
+          };
+        }).filter(l => l.name && l.phone);
+      } else {
+        const text = await file.text();
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length === 0) throw new Error('File is empty');
+
+        const firstLine = lines[0];
+        const delimiter = firstLine.includes(';') && !firstLine.includes(',') ? ';' : ',';
+
+        const parseCSVLine = (line: string) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === delimiter && !inQuotes) {
+              result.push(current.trim());
+              current = '';
+            } else current += char;
+          }
+          result.push(current.trim());
+          return result.map(s => s.replace(/^"|"$/g, ''));
+        };
+
+        const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase());
+        const nameIdx = headers.findIndex(h => h.includes('name'));
+        const phoneIdx = headers.findIndex(h => h.includes('phone') || h.includes('mobile') || h.includes('number') || h.includes('contact'));
+        const companyIdx = headers.findIndex(h => h.includes('company') || h.includes('org'));
+
+        const startIdx = (nameIdx !== -1 || phoneIdx !== -1) ? 1 : 0;
+        const finalNameIdx = nameIdx !== -1 ? nameIdx : 0;
+        const finalPhoneIdx = phoneIdx !== -1 ? phoneIdx : 1;
+        const finalCompanyIdx = companyIdx !== -1 ? companyIdx : 2;
+
+        for (let i = startIdx; i < lines.length; i++) {
+          const parts = parseCSVLine(lines[i]);
+          if (parts.length >= 2) {
+            const name = parts[finalNameIdx];
+            const phone = parts[finalPhoneIdx];
+            if (name && phone) {
+              leadsToAdd.push({ name, phone, company: parts[finalCompanyIdx] || undefined });
+            }
+          }
+        }
+      }
+
+      if (leadsToAdd.length > 0) {
+        // Trim batch name to avoid trailing space issues
+        const batchName = file.name.replace(/\.[^/.]+$/, "").trim() + '_' + new Date().toLocaleTimeString().replace(/:/g, '-');
+        
         const res = await fetch('/api/leads', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -194,15 +249,18 @@ function ClientDemoContent() {
         });
         
         if (res.ok) {
-          setUploadedFiles(prev => [...prev, { name: file.name, type: file.name.split('.').pop()?.toUpperCase() || 'CSV' }]);
+          setUploadedFiles(prev => [...prev, { name: file.name, type: file.name.split('.').pop()?.toUpperCase() || 'FILE' }]);
           await fetchMyLeads(clientData.id);
           setActiveBatch(batchName);
+        } else {
+          alert('Upload failed on server.');
         }
-      } catch (err) {
-        alert('Failed to upload leads.');
+      } else {
+        alert('No valid leads found in this file. Please ensure it has Name and Phone columns.');
       }
-    } else {
-      alert('No valid leads found in this file. Please ensure it is a CSV with Name and Phone columns.');
+    } catch (err: any) {
+      console.error(err);
+      alert('Error: ' + err.message);
     }
     setLoading(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -267,9 +325,11 @@ function ClientDemoContent() {
   };
 
   const handleRunBatch = async () => {
-    const uncalledLeads = currentBatchLeads.filter(l => l.status === 'uncalled');
+    // Be more inclusive of statuses
+    const uncalledLeads = currentBatchLeads.filter(l => l.status === 'uncalled' || l.status === 'pending');
+    
     if (uncalledLeads.length === 0) {
-      alert("No new leads to call in this batch.");
+      alert(`No new leads to call in this batch. (Found ${currentBatchLeads.length} total, but none are in 'uncalled' or 'pending' status)`);
       return;
     }
     
@@ -384,7 +444,7 @@ function ClientDemoContent() {
   const totalCount = currentBatchLeads.length;
   const interestedCount = currentBatchLeads.filter(l => l.status === 'interested').length;
   const notInterestedCount = currentBatchLeads.filter(l => l.status === 'rejected').length;
-  const pendingCount = currentBatchLeads.filter(l => l.status === 'uncalled').length;
+  const pendingCount = currentBatchLeads.filter(l => l.status === 'uncalled' || l.status === 'pending').length;
   const busyCount = currentBatchLeads.filter(l => l.status === 'busy' || l.status === 'calling').length;
   
 
