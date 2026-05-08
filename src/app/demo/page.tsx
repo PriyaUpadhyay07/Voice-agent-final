@@ -143,7 +143,7 @@ export default function DemoPortal() {
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '99px', transform: 'rotate(135deg)', boxShadow: 'inset -5px -5px 15px rgba(0,0,0,0.3), inset 5px 5px 15px rgba(255,255,255,0.4)' }} />
       </div>
 
-      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '15px', paddingBottom: '40px', width: '100%' }}>
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '5px', paddingBottom: '40px', width: '100%' }}>
         
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '40px', fontWeight: '800', fontSize: '14px', letterSpacing: '1px' }}>
