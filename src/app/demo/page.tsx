@@ -11,7 +11,12 @@ const COUNTRIES = [
   { name: 'Canada', code: '+1', flag: '🇨🇦' },
   { name: 'Australia', code: '+61', flag: '🇦🇺' },
   { name: 'France', code: '+33', flag: '🇫🇷' },
-  { name: 'Germany', code: '+49', flag: '🇩🇪' }
+  { name: 'Germany', code: '+49', flag: '🇩🇪' },
+  { name: 'UAE / Dubai', code: '+971', flag: '🇦🇪' },
+  { name: 'Saudi Arabia', code: '+966', flag: '🇸🇦' },
+  { name: 'New Zealand', code: '+64', flag: '🇳🇿' },
+  { name: 'Switzerland', code: '+41', flag: '🇨🇭' },
+  { name: 'Singapore', code: '+65', flag: '🇸🇬' }
 ];
 
 export default function DemoPortal() {
