@@ -86,4 +86,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   .content-wrapper {
     padding-left: 54px !important; /* Indent content on mobile to fit floating toggle button */
   }
+
+  .sidebar-toggle-btn {
+    top: 28px !important; /* Lower it down on mobile to prevent browser status bar overlap */
+  }
 }

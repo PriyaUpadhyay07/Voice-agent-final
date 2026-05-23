@@ -218,7 +218,7 @@ function DashboardContent() {
         className="sidebar-toggle-btn"
         style={{
           position: "absolute",
-          top: 14,
+          top: 20,
           left: sidebarOpen ? 280 : 20,
           transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           zIndex: 100
