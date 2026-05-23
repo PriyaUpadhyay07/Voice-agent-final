@@ -43,6 +43,22 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .pulse { animation: pulse 2s ease infinite; }
 .spin { animation: spin 1s linear infinite; }
 
+/* Desktop Sidebar Transition & Layout Styles */
+.sidebar-container {
+  width: 260px;
+  min-width: 260px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  z-index: 40;
+}
+
+.sidebar-container.closed {
+  margin-left: -260px; /* Slide off-screen elegantly on desktop instead of squishing */
+}
+
 /* Mobile Responsive Overrides */
 @media (max-width: 768px) {
   .sidebar-container {
@@ -51,7 +67,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
     top: 0;
     bottom: 0;
     height: 100vh !important;
-    background: var(--sidebar-bg) !important;
+    margin-left: 0 !important;
+    transform: translateX(-100%) !important; /* Move completely off-screen on mobile */
+    box-shadow: none !important;
+    border-right: none !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+  
+  .sidebar-container.open {
+    transform: translateX(0) !important; /* Slide in beautifully on mobile */
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6) !important;
   }
   
@@ -60,6 +84,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
   }
   
   .content-wrapper {
-    padding-left: 54px !important; /* Always indent on mobile to fit the floating toggle button */
+    padding-left: 54px !important; /* Indent content on mobile to fit floating toggle button */
   }
 }

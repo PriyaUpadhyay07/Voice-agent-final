@@ -222,15 +222,11 @@ function DashboardContent() {
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", position: "relative" }}>
       {/* Sidebar Container */}
       <div 
-        className="sidebar-container"
+        className={`sidebar-container ${sidebarOpen ? "open" : "closed"}`}
         style={{
-          width: sidebarOpen ? 260 : 0,
-          minWidth: sidebarOpen ? 260 : 0,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          overflow: "hidden",
+          height: "100vh",
           display: "flex",
-          flexDirection: "column",
-          zIndex: 40
+          flexDirection: "column"
         }}
       >
         <Sidebar
