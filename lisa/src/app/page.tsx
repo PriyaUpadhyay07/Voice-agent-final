@@ -57,13 +57,6 @@ function DashboardContent() {
   const [userEmail, setUserEmail] = useState<string>("upadhyaypriya974@gmail.com");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Auto-collapse sidebar on mobile viewports on initial load
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 768) {
-      setSidebarOpen(false);
-    }
-  }, []);
-
   const searchParams = useSearchParams();
   const userId = searchParams.get("userId") || searchParams.get("id") || "";
 
