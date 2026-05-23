@@ -16,17 +16,22 @@ This file tracks permanently removed features, user preferences, and implementat
    - Column-based view (like a spreadsheet).
 3. **Supabase Integration**: Ensure `prisma` is correctly pushing to Supabase and Auth is correctly creating entries in the `User` table.
 4. **SignalWire**: International calling is now enabled. All call logic should prioritize SignalWire with proper International formatting (+prefix).
+5. **Passwordless Magic Link Auth**: Use Supabase passwordless auth (Magic Links or OTP via email) for client logins. This eliminates the password trust issue and provides a seamless login experience.
+6. **Admin Pre-Setup Workflow**: 
+   - Clients submit onboarding answers to the admin (6-7 questions: Goal, FAQ, Voice, Transfer Number, Calendar, Caller ID).
+   - Admin manually pre-configures the client's profile in the database linked to their email.
+   - Client is given the direct link, logs in via Magic Link, and sees their ready-to-use dashboard.
 
 ## 🚀 Phase Status
 - **Phase 1: Foundation & Auth**: ✅ COMPLETED (Supabase sync verified, Admin login cleaned)
 - **Phase 2: Dashboard & Lead Management**: ✅ COMPLETED (Sheet view implemented, grouping by date active)
 - **Phase 3: AI Voice & SignalWire Integration**: 🚧 In Progress (Ready for Testing)
-- **Phase 4: SaaS Subscription & Scaling**: ⏳ Pending
+- **Phase 4: SaaS Scaling & Passwordless Magic Links**: 🚧 Next Up (Designing the Onboarding Flow & Magic Link Integration)
 
 ## 🛠️ Tech Stack Reminder
 - Next.js (App Router)
 - Prisma (with Supabase/PostgreSQL)
-- NextAuth / Auth.js
+- Supabase Auth (Passwordless Magic Link)
 - Vanilla CSS (Rich/Premium Aesthetics)
 - SignalWire (Telephony)
 - ElevenLabs (AI Voice)

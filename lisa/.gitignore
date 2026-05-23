@@ -43,5 +43,3 @@ lisa.env
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-/src/generated/prisma

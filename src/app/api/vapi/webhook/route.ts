@@ -39,9 +39,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true });
     }
 
-    // Calculate cost: use the real cost from VAPI if available, otherwise fallback to estimate
+    // Calculate cost: Lisa Fixed Rate ($1 = 10 mins -> $0.10 per min)
     const durationMinutes = parsed.duration / 60;
-    const totalCost = parsed.cost || (durationMinutes * 0.07);
+    const totalCost = durationMinutes * 0.10; // Fixed Lisa Rate
 
 
     // Determine lead status from transcript

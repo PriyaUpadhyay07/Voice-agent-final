@@ -4,7 +4,7 @@ import { createVapiCall } from '../../../lib/vapi';
 
 export const dynamic = 'force-dynamic';
 
-const COST_PER_MINUTE = 0.07; // Estimated VAPI + Cartesia + SignalWire cost
+const COST_PER_MINUTE = 0.10; // Lisa Fixed Rate ($1 = 10 mins)
 const MIN_CREDITS = 1; // Minimum 1 minute to make a call
 
 // Smart phone number formatter

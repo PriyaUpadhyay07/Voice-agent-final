@@ -8,7 +8,20 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(req: Request) {
   try {
-    const { amount, credits } = await req.json();
+    let { amount, credits } = await req.json();
+
+    // If amount is less than 1000, assume it's in dollars and convert to paise
+    // (Razorpay expects amount in the smallest currency unit)
+    if (amount < 1000) {
+      const dollars = amount;
+      amount = dollars * 100; // Convert to paise/cents
+      if (!credits) {
+        credits = dollars * 10; // $1 = 10 minutes
+      }
+    } else if (!credits) {
+      // If amount is already in paise, calculate credits
+      credits = (amount / 100) * 10;
+    }
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
