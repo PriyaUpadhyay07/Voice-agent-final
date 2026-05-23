@@ -213,6 +213,41 @@ function DashboardContent() {
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden", position: "relative" }}>
+      {/* Root Level Sidebar Toggle Button - Moves dynamically with sidebar */}
+      <div 
+        className="sidebar-toggle-btn"
+        style={{
+          position: "absolute",
+          top: 14,
+          left: sidebarOpen ? 280 : 20,
+          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          zIndex: 100
+        }}
+      >
+        <button 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          title={sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+          style={{
+            background: "#1e1e1e",
+            border: "1px solid #333",
+            borderRadius: 8,
+            width: 36,
+            height: 36,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#888",
+            transition: "all 0.15s ease",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#2a2a2a"; e.currentTarget.style.color = "#fff"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "#1e1e1e"; e.currentTarget.style.color = "#888"; }}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+        </button>
+      </div>
+
       {/* Sidebar Container */}
       <div 
         className={`sidebar-container ${sidebarOpen ? "open" : "closed"}`}
@@ -254,38 +289,6 @@ function DashboardContent() {
 
       {/* Main Content Area */}
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}>
-        
-        {/* Toggle Button - Styled exactly like the screenshot */}
-        <div style={{
-          position: "absolute",
-          top: 14,
-          left: 20,
-          zIndex: 100
-        }}>
-          <button 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
-            style={{
-              background: "#1e1e1e",
-              border: "1px solid #333",
-              borderRadius: 8,
-              width: 36,
-              height: 36,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#888",
-              transition: "all 0.15s ease",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "#2a2a2a"; e.currentTarget.style.color = "#fff"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "#1e1e1e"; e.currentTarget.style.color = "#888"; }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-          </button>
-        </div>
-
         {/* Dynamic margin/padding wrapper to ensure toggle button never overlaps headings */}
         <div 
           className="content-wrapper"
