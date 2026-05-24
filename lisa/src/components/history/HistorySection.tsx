@@ -356,8 +356,15 @@ export default function HistorySection({ campaigns }: { campaigns: any[] }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {selectedCall.messages.map((m: any, i: number) => {
                     const content = m.message || m.content || "";
-                    // Filter out System Prompt (Riley, Wellness Partners, # Appointment etc)
-                    if (content.includes("# Appointment") || content.includes("Identity & Purpose") || content.includes("You are Riley")) return null;
+                    // Filter out System Prompt
+                    if (
+                      m.role === "system" || 
+                      content.includes("You are Lisa") || 
+                      content.includes("professional cold calling assistant") || 
+                      content.includes("# Appointment") || 
+                      content.includes("Identity & Purpose") || 
+                      content.includes("You are Riley")
+                    ) return null;
                     
                     const isAi = m.role === "assistant" || m.role === "bot";
                     if (!content) return null;
@@ -371,7 +378,12 @@ export default function HistorySection({ campaigns }: { campaigns: any[] }) {
               ) : selectedCall.transcript ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {selectedCall.transcript.split("\n").map((line, i) => {
-                    if (line.includes("# Appointment") || line.includes("Identity & Purpose")) return null;
+                    if (
+                      line.includes("You are Lisa") || 
+                      line.includes("professional cold calling assistant") || 
+                      line.includes("# Appointment") || 
+                      line.includes("Identity & Purpose")
+                    ) return null;
                     const isAi = line.toLowerCase().startsWith("ai:") || line.toLowerCase().startsWith("assistant:");
                     return (
                       <div key={i} style={{ padding: "12px 16px", borderRadius: 12, background: isAi ? "rgba(16,163,127,0.1)" : "#2a2a2a", border: isAi ? "1px solid rgba(16,163,127,0.2)" : "1px solid var(--border)", alignSelf: isAi ? "flex-start" : "flex-end", maxWidth: "85%" }}>
