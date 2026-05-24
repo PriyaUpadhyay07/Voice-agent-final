@@ -57,12 +57,9 @@ export async function POST(req: Request) {
           name: lead.name || lead.Name || lead.NAME || undefined,
         },
         assistantOverrides: script ? {
-          firstMessage: script.split("\n")[0] || undefined,
-          instructions: script, // Critical: Overrides system prompt for convo duration
+          instructions: script,
           model: {
-            provider: "openai",
-            model: "gpt-4o-mini",
-            messages: [{ role: "system", content: script }]
+            systemPrompt: script
           }
         } : undefined
       }),

@@ -28,7 +28,7 @@ export interface CampaignMessage {
   id: string;
   file: UploadedFile | null;
   script: string;
-  status: "calling" | "done" | "error";
+  status: "calling" | "paused" | "done" | "error";
   calledCount: number;
   errorDetails?: string;
 }
@@ -55,6 +55,7 @@ function DashboardContent() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [userName, setUserName] = useState<string>("Priya");
   const [userEmail, setUserEmail] = useState<string>("upadhyaypriya974@gmail.com");
+  const [resolvedUserId, setResolvedUserId] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const searchParams = useSearchParams();
@@ -70,48 +71,68 @@ function DashboardContent() {
           setUserName(data.name);
           if (data.email) setUserEmail(data.email);
         }
-      })
-      .catch(err => console.error("Failed to load profile:", err));
 
-    // Load campaigns
-    if (userId) {
-      fetch(`/api/campaigns?userId=${userId}`)
-        .then(res => res.json())
-        .then((data: Campaign[]) => {
-          if (Array.isArray(data) && data.length > 0) {
-            setCampaigns(data);
-            setActiveCampaignId(data[0].id);
-          } else {
-            const first = newCampaign();
-            setCampaigns([first]);
-            setActiveCampaignId(first.id);
-            saveCampaign(first);
-          }
-          setHasLoaded(true);
-        })
-        .catch(err => {
-          console.error("Failed to load campaigns from DB:", err);
+        // Resolve database user ID
+        const activeUserId = data.id || userId;
+        if (activeUserId) {
+          setResolvedUserId(activeUserId);
+
+          // Load campaigns
+          fetch(`/api/campaigns?userId=${activeUserId}`)
+            .then(res => res.json())
+            .then((campaignData: Campaign[]) => {
+              if (Array.isArray(campaignData) && campaignData.length > 0) {
+                // Clean up any active "calling" or "paused" campaigns to "error" (interrupted)
+                const cleanedData = campaignData.map(camp => ({
+                  ...camp,
+                  messages: camp.messages.map(m =>
+                    (m.status === "calling" || m.status === "paused")
+                      ? { ...m, status: "error" as const, errorDetails: "Campaign interrupted (Page refreshed)." }
+                      : m
+                  )
+                }));
+                setCampaigns(cleanedData);
+                setActiveCampaignId(cleanedData[0].id);
+              } else {
+                const first = newCampaign();
+                setCampaigns([first]);
+                setActiveCampaignId(first.id);
+                saveCampaign(first, activeUserId);
+              }
+              setHasLoaded(true);
+            })
+            .catch(err => {
+              console.error("Failed to load campaigns from DB:", err);
+              const first = newCampaign();
+              setCampaigns([first]);
+              setActiveCampaignId(first.id);
+              setHasLoaded(true);
+            });
+        } else {
           const first = newCampaign();
           setCampaigns([first]);
           setActiveCampaignId(first.id);
           setHasLoaded(true);
-        });
-    } else {
-      const first = newCampaign();
-      setCampaigns([first]);
-      setActiveCampaignId(first.id);
-      setHasLoaded(true);
-    }
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load profile:", err);
+        const first = newCampaign();
+        setCampaigns([first]);
+        setActiveCampaignId(first.id);
+        setHasLoaded(true);
+      });
   }, [userId]);
 
   // Background save helper
-  const saveCampaign = async (campaign: Campaign) => {
-    if (!userId) return;
+  const saveCampaign = async (campaign: Campaign, uid?: string) => {
+    const targetUid = uid || resolvedUserId || userId;
+    if (!targetUid) return;
     try {
       await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, campaign }),
+        body: JSON.stringify({ userId: targetUid, campaign }),
       });
     } catch (err) {
       console.error("Failed to save campaign to DB:", err);
@@ -156,7 +177,8 @@ function DashboardContent() {
       if (id === activeCampaignId) setActiveCampaignId(next[0].id);
       return next;
     });
-    if (userId) {
+    const targetUid = resolvedUserId || userId;
+    if (targetUid) {
       fetch(`/api/campaigns?id=${id}`, { method: "DELETE" }).catch(err => console.error("Error deleting campaign:", err));
     }
   };
@@ -305,7 +327,7 @@ function DashboardContent() {
             <CampaignPage
               campaign={activeCampaign}
               updateCampaign={(updater) => updateCampaign(activeCampaign.id, updater)}
-              userId={userId}
+              userId={resolvedUserId || userId}
             />
           )}
           {activeTab === "leads" && (
@@ -316,7 +338,7 @@ function DashboardContent() {
             />
           )}
           {activeTab === "history" && <HistorySection campaigns={campaigns} />}
-          {activeTab === "credits" && <CreditsSection userId={userId} />}
+          {activeTab === "credits" && <CreditsSection userId={resolvedUserId || userId} />}
         </div>
       </div>
     </div>

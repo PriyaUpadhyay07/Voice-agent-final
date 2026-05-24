@@ -39,6 +39,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
+      id: user.id,
       name: user.name || "Client",
       email: user.email,
       balance: user.walletAmount,

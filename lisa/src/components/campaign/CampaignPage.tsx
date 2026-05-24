@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Papa from "papaparse";
-import { Plus, X, FileSpreadsheet, Link2, ArrowUp, Loader2, CheckCircle2, PhoneCall, AlertCircle } from "lucide-react";
+import { Plus, X, FileSpreadsheet, Link2, ArrowUp, Loader2, CheckCircle2, PhoneCall, AlertCircle, Pause, Play, Square } from "lucide-react";
 import type { Campaign, CampaignMessage, Lead, UploadedFile } from "@/app/page";
 
 interface Props {
@@ -26,9 +26,31 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
   const menuRef = useRef<HTMLDivElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const cancelledCampaignsRef = useRef<Set<string>>(new Set());
+  const pausedCampaignsRef = useRef<Set<string>>(new Set());
+
+  const handlePauseCampaign = useCallback((msgId: string) => {
+    pausedCampaignsRef.current.add(msgId);
+    updateCampaign(c => ({
+      ...c,
+      messages: c.messages.map(m =>
+        m.id === msgId ? { ...m, status: "paused" } : m
+      ),
+    }));
+  }, [updateCampaign]);
+
+  const handleResumeCampaign = useCallback((msgId: string) => {
+    pausedCampaignsRef.current.delete(msgId);
+    updateCampaign(c => ({
+      ...c,
+      messages: c.messages.map(m =>
+        m.id === msgId ? { ...m, status: "calling" } : m
+      ),
+    }));
+  }, [updateCampaign]);
 
   const handleStopCampaign = useCallback((msgId: string) => {
     cancelledCampaignsRef.current.add(msgId);
+    pausedCampaignsRef.current.delete(msgId);
     updateCampaign(c => ({
       ...c,
       messages: c.messages.map(m =>
@@ -161,9 +183,24 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
       const errorLogs: string[] = [];
 
       for (let i = 0; i < msgLeads.length; i++) {
+        // 1. Check if stopped
         if (cancelledCampaignsRef.current.has(msgId)) {
           break;
         }
+
+        // 2. Check if paused, block/sleep until unpaused or stopped
+        while (pausedCampaignsRef.current.has(msgId)) {
+          if (cancelledCampaignsRef.current.has(msgId)) {
+            break;
+          }
+          await new Promise(r => setTimeout(r, 1000));
+        }
+
+        // Re-check stopped state after waking up from pause
+        if (cancelledCampaignsRef.current.has(msgId)) {
+          break;
+        }
+
         const lead = msgLeads[i];
         
         // Find phone
@@ -282,7 +319,13 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
 
         {/* Messages */}
         {campaign.messages.map(msg => (
-          <MessageBubble key={msg.id} msg={msg} onStop={() => handleStopCampaign(msg.id)} />
+          <MessageBubble 
+            key={msg.id} 
+            msg={msg} 
+            onStop={() => handleStopCampaign(msg.id)} 
+            onPause={() => handlePauseCampaign(msg.id)}
+            onResume={() => handleResumeCampaign(msg.id)}
+          />
         ))}
 
         <div ref={chatBottomRef} />
@@ -398,7 +441,17 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
   );
 }
 
-function MessageBubble({ msg, onStop }: { msg: CampaignMessage; onStop?: () => void }) {
+function MessageBubble({ 
+  msg, 
+  onStop, 
+  onPause, 
+  onResume 
+}: { 
+  msg: CampaignMessage; 
+  onStop?: () => void; 
+  onPause?: () => void; 
+  onResume?: () => void; 
+}) {
   return (
     <div style={{ width: "100%", maxWidth: 720, marginBottom: 24 }} className="fade-up">
       {/* File card */}
@@ -428,45 +481,147 @@ function MessageBubble({ msg, onStop }: { msg: CampaignMessage; onStop?: () => v
 
       {/* Status row */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingLeft: 4 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           {msg.status === "calling" && (
             <>
               <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid #10a37f", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
               <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
                 Calling Leads: <span style={{ color: "#10a37f" }}>{msg.calledCount}</span> / {msg.file?.count ?? 0}
               </span>
-              {onStop && (
-                <button
-                  onClick={onStop}
-                  style={{
-                    marginLeft: 12,
-                    background: "rgba(239, 68, 68, 0.15)",
-                    border: "1px solid rgba(239, 68, 68, 0.3)",
-                    color: "var(--red)",
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    transition: "all 0.15s"
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
-                    e.currentTarget.style.boxShadow = "0 0 10px rgba(239, 68, 68, 0.1)";
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                >
-                  Stop Campaign
-                </button>
-              )}
+              <div style={{ display: "flex", gap: 8, marginLeft: 12 }}>
+                {onPause && (
+                  <button
+                    onClick={onPause}
+                    style={{
+                      background: "rgba(245, 158, 11, 0.15)",
+                      border: "1px solid rgba(245, 158, 11, 0.3)",
+                      color: "var(--orange)",
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      transition: "all 0.15s"
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(245, 158, 11, 0.25)";
+                      e.currentTarget.style.boxShadow = "0 0 10px rgba(245, 158, 11, 0.1)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(245, 158, 11, 0.15)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <Pause size={12} /> Pause
+                  </button>
+                )}
+                {onStop && (
+                  <button
+                    onClick={onStop}
+                    style={{
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                      color: "var(--red)",
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      transition: "all 0.15s"
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+                      e.currentTarget.style.boxShadow = "0 0 10px rgba(239, 68, 68, 0.1)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <Square size={12} fill="currentColor" /> Stop
+                  </button>
+                )}
+              </div>
             </>
           )}
+
+          {msg.status === "paused" && (
+            <>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", background: "rgba(245, 158, 11, 0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--orange)" }} />
+              </div>
+              <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
+                Campaign Paused: <span style={{ color: "var(--orange)" }}>{msg.calledCount}</span> / {msg.file?.count ?? 0}
+              </span>
+              <div style={{ display: "flex", gap: 8, marginLeft: 12 }}>
+                {onResume && (
+                  <button
+                    onClick={onResume}
+                    style={{
+                      background: "rgba(16, 163, 127, 0.15)",
+                      border: "1px solid rgba(16, 163, 127, 0.3)",
+                      color: "#10a37f",
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      transition: "all 0.15s"
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(16, 163, 127, 0.25)";
+                      e.currentTarget.style.boxShadow = "0 0 10px rgba(16, 163, 127, 0.1)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(16, 163, 127, 0.15)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <Play size={12} fill="currentColor" /> Resume
+                  </button>
+                )}
+                {onStop && (
+                  <button
+                    onClick={onStop}
+                    style={{
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                      color: "var(--red)",
+                      padding: "6px 12px",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      transition: "all 0.15s"
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgba(239, 68, 68, 0.25)";
+                      e.currentTarget.style.boxShadow = "0 0 10px rgba(239, 68, 68, 0.1)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgba(239, 68, 68, 0.15)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <Square size={12} fill="currentColor" /> Stop
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+
           {msg.status === "done" && (
             <>
               <CheckCircle2 size={20} color="#10a37f" />
@@ -475,6 +630,7 @@ function MessageBubble({ msg, onStop }: { msg: CampaignMessage; onStop?: () => v
               </span>
             </>
           )}
+
           {msg.status === "error" && (
             <>
               <AlertCircle size={20} color="var(--red)" />
