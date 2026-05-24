@@ -14,7 +14,8 @@ interface Props {
 function genId() { return Math.random().toString(36).slice(2, 9); }
 
 export default function CampaignPage({ campaign, updateCampaign, userId }: Props) {
-  const [script, setScript] = useState("");
+  const [firstMessage, setFirstMessage] = useState("");
+  const [description, setDescription] = useState("");
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [pendingLeads, setPendingLeads] = useState<Lead[]>([]);
   const [showUploadMenu, setShowUploadMenu] = useState(false);
@@ -61,7 +62,8 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
 
   // Reset input when campaign changes
   useEffect(() => {
-    setScript("");
+    setFirstMessage("");
+    setDescription("");
     setUploadedFile(null);
     setPendingLeads([]);
     setShowSheetInput(false);
@@ -69,14 +71,6 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
   }, [campaign.id]);
 
   const existingPendingCount = (campaign.leads || []).filter(l => !l.status || l.status === "pending").length;
-
-  // Auto resize textarea
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
-  }, [script]);
 
   // Close upload menu on outside click
   useEffect(() => {
@@ -132,18 +126,21 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
     }
   };
 
-  const canSend = (script.trim().length > 0 && (uploadedFile !== null || existingPendingCount > 0));
+  const canSend = (firstMessage.trim().length > 0 && (uploadedFile !== null || existingPendingCount > 0));
 
   const handleSend = async () => {
     if (!canSend) return;
 
     const msgId = genId();
-    const msgScript = script.trim();
+    const msgScript = JSON.stringify({
+      firstMessage: firstMessage.trim(),
+      description: description.trim()
+    });
     const msgFile = uploadedFile;
     // Capture leads: from file OR existing pending leads in campaign
     const msgLeads = uploadedFile ? [...pendingLeads] : (campaign.leads || []).filter(l => !l.status || l.status === "pending");
 
-    console.log(`[Lisa] Sending: ${msgLeads.length} leads, script length: ${msgScript.length}`);
+    console.log(`[Lisa] Sending: ${msgLeads.length} leads, script JSON length: ${msgScript.length}`);
 
     // 1. Add message to campaign immediately (optimistic)
     const newMsg: CampaignMessage = {
@@ -162,7 +159,8 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
     }));
 
     // 2. Clear input AFTER capturing
-    setScript("");
+    setFirstMessage("");
+    setDescription("");
     setUploadedFile(null);
     setPendingLeads([]);
 
@@ -387,17 +385,37 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
           )}
 
           {/* Main input box */}
-          <div style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: 28, padding: "10px 10px 10px 16px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <textarea
-              ref={textareaRef}
-              value={script}
-              onChange={e => setScript(e.target.value)}
-              placeholder="Write your AI agent's script here..."
-              rows={1}
-              style={{ background: "transparent", border: "none", outline: "none", resize: "none", color: "var(--text)", fontSize: 15, lineHeight: 1.6, fontFamily: "inherit", width: "100%", minHeight: 26, maxHeight: 200, overflowY: "auto", padding: "4px 0" }}
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-            />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ background: "var(--input-bg)", border: "1px solid var(--input-border)", borderRadius: 24, padding: "16px", display: "flex", flexDirection: "column", gap: 14 }}>
+            
+            {/* Box 1: First Message */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#10a37f", letterSpacing: 0.5, display: "flex", gap: 4 }}>
+                First Message <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>(AI Assistant speak first)</span>
+              </label>
+              <textarea
+                value={firstMessage}
+                onChange={e => setFirstMessage(e.target.value)}
+                placeholder="Write what the AI agent speaks immediately when the call is answered..."
+                rows={1}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, outline: "none", resize: "none", color: "var(--text)", fontSize: 14, lineHeight: 1.5, fontFamily: "inherit", width: "100%", minHeight: 36, maxHeight: 80, overflowY: "auto", padding: "8px 12px" }}
+              />
+            </div>
+
+            {/* Box 2: Description / Script */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#2563eb", letterSpacing: 0.5 }}>
+                Description / Script
+              </label>
+              <textarea
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                placeholder="Describe your business, FAQ, rules and details the AI should use to converse..."
+                rows={2}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, outline: "none", resize: "none", color: "var(--text)", fontSize: 14, lineHeight: 1.5, fontFamily: "inherit", width: "100%", minHeight: 60, maxHeight: 150, overflowY: "auto", padding: "8px 12px" }}
+              />
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
               {/* + button */}
               <div style={{ position: "relative" }} ref={menuRef}>
                 <button onClick={() => setShowUploadMenu(v => !v)}
@@ -473,11 +491,38 @@ function MessageBubble({
       )}
 
       {/* Script text */}
-      {msg.script && (
-        <div style={{ background: "#2a2a2a", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px", marginBottom: 10 }}>
-          <p style={{ margin: 0, color: "var(--text-sub)", fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{msg.script}</p>
-        </div>
-      )}
+      {(() => {
+        let displayFirstMessage = "";
+        let displayDescription = "";
+        try {
+          const parsed = JSON.parse(msg.script);
+          if (parsed && typeof parsed === "object") {
+            displayFirstMessage = parsed.firstMessage || "";
+            displayDescription = parsed.description || "";
+          } else {
+            displayFirstMessage = msg.script;
+          }
+        } catch (e) {
+          displayFirstMessage = msg.script;
+        }
+
+        return (
+          <>
+            {displayFirstMessage && (
+              <div style={{ background: "#2a2a2a", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px", marginBottom: 10 }}>
+                <p style={{ margin: "0 0 6px 0", fontSize: 11, fontWeight: 700, color: "#10a37f", textTransform: "uppercase", letterSpacing: 0.5 }}>First Message (AI Assistant speak first)</p>
+                <p style={{ margin: 0, color: "var(--text-sub)", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{displayFirstMessage}</p>
+              </div>
+            )}
+            {displayDescription && (
+              <div style={{ background: "#2a2a2a", border: "1px solid var(--border)", borderRadius: 12, padding: "12px 16px", marginBottom: 10 }}>
+                <p style={{ margin: "0 0 6px 0", fontSize: 11, fontWeight: 700, color: "#2563eb", textTransform: "uppercase", letterSpacing: 0.5 }}>Description / Script</p>
+                <p style={{ margin: 0, color: "var(--text-sub)", fontSize: 14, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{displayDescription}</p>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Status row */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingLeft: 4 }}>

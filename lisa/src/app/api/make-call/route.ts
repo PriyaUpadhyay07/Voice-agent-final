@@ -42,6 +42,24 @@ export async function POST(req: Request) {
       else phone = "+" + phone;
     }
 
+    // Parse JSON script containing firstMessage and description
+    let firstMessage = script;
+    let description = "";
+    try {
+      const parsed = JSON.parse(script);
+      if (parsed && typeof parsed === "object") {
+        firstMessage = parsed.firstMessage || "";
+        description = parsed.description || "";
+      }
+    } catch (e) {
+      // Fallback for legacy plain-text script
+      firstMessage = script;
+    }
+
+    const systemPromptContent = description 
+      ? `You are Lisa, a professional cold calling assistant. Your greeting is: "${firstMessage}". Business Info / Script context:\n${description}\nKeep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`
+      : `You are Lisa, a professional cold calling assistant. Your greeting is: "${firstMessage}". Keep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`;
+
     // Make the call with complete assistantOverrides
     const callRes = await fetch("https://api.vapi.ai/call/phone", {
       method: "POST",
@@ -57,14 +75,14 @@ export async function POST(req: Request) {
           name: lead.name || lead.Name || lead.NAME || undefined,
         },
         assistantOverrides: script ? {
-          firstMessage: script,
+          firstMessage: firstMessage,
           model: {
             provider: "openai",
             model: "gpt-4o-mini",
             messages: [
               {
                 role: "system",
-                content: `You are Lisa, a professional cold calling assistant. Your greeting is: "${script}". Keep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`
+                content: systemPromptContent
               }
             ]
           }
