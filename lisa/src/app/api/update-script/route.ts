@@ -23,8 +23,16 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        firstMessage: script,
         model: {
-          systemPrompt: script,
+          provider: "openai",
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: `You are Lisa, a professional cold calling assistant. Your greeting is: "${script}". Keep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`
+            }
+          ]
         },
       }),
     });

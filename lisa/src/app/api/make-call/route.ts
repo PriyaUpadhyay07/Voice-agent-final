@@ -57,10 +57,16 @@ export async function POST(req: Request) {
           name: lead.name || lead.Name || lead.NAME || undefined,
         },
         assistantOverrides: script ? {
+          firstMessage: script,
           model: {
             provider: "openai",
             model: "gpt-4o-mini",
-            systemPrompt: script
+            messages: [
+              {
+                role: "system",
+                content: `You are Lisa, a professional cold calling assistant. Your greeting is: "${script}". Keep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`
+              }
+            ]
           }
         } : undefined
       }),
