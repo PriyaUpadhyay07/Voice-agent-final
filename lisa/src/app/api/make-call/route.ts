@@ -57,8 +57,9 @@ export async function POST(req: Request) {
           name: lead.name || lead.Name || lead.NAME || undefined,
         },
         assistantOverrides: script ? {
-          instructions: script,
           model: {
+            provider: "openai",
+            model: "gpt-4o-mini",
             systemPrompt: script
           }
         } : undefined
