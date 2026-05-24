@@ -29,34 +29,50 @@ const getCallOutcome = (log: CallLog) => {
   
   const text = customerMessages.join(" ");
   const reason = (log.endedReason || "").toLowerCase();
+  const duration = log.duration || log.durationSeconds || 0;
+  const hasSpoken = customerMessages.length > 0 && customerMessages.join("").trim().length > 0;
 
-  // 1. Not Interested / Irrelevant / Junk (Priority)
-  if (
-    text.includes("not interested") || 
-    text.includes("don't want") || 
-    text.includes("no thanks") || 
-    text.includes("not looking") ||
-    text.includes("stop") ||
-    text.includes("wrong number") ||
-    text.includes("pizza") || text.includes("crusted") || // Irrelevant junk detection
-    (reason.includes("customer-ended") && text.length > 0 && text.length < 40)
-  ) {
-    return { label: "Not Interested", color: "var(--red)", bg: "rgba(239,68,68,0.15)" };
+  // 1. Pending Conditions (No pickup, busy line, voicemail, or explicitly asked to call back/busy)
+  const isNoAnswer = 
+    reason.includes("no-answer") || 
+    reason.includes("did-not-answer") || 
+    reason.includes("busy") || 
+    reason.includes("rejected") || 
+    duration < 8 || 
+    !hasSpoken;
+
+  const askedToCallBack = 
+    text.includes("busy") || 
+    text.includes("call back") || 
+    text.includes("later") || 
+    text.includes("not now") || 
+    text.includes("meeting") || 
+    text.includes("driving") || 
+    text.includes("another time") || 
+    reason.includes("voicemail");
+
+  if (isNoAnswer || askedToCallBack) {
+    return { label: "Pending", color: "var(--orange)", bg: "rgba(245,158,11,0.15)" };
   }
 
-  // 2. Interested Logic (High Intent Only)
-  const hasHighIntent = 
+  // 2. Interested Conditions (Intent shown)
+  const hasInterest = 
     text.includes("book") || 
     text.includes("schedule") || 
     text.includes("appointment") || 
+    text.includes("demo") || 
+    text.includes("send me") || 
+    text.includes("email me") || 
+    text.includes("pricing") || 
+    text.includes("interested") || 
     (text.includes("yes") && (text.includes("please") || text.includes("sure") || text.includes("work")));
 
-  if (hasHighIntent) {
+  if (hasInterest) {
     return { label: "Interested", color: "var(--green)", bg: "rgba(16,163,127,0.15)" };
   }
 
-  // 3. Pending (No answer, busy, or low interaction)
-  return { label: "Pending", color: "var(--orange)", bg: "rgba(245,158,11,0.15)" };
+  // 3. Not Interested (Default fallback for any active conversation that hung up without interest)
+  return { label: "Not Interested", color: "var(--red)", bg: "rgba(239,68,68,0.15)" };
 };
 
 export default function HistorySection({ campaigns }: { campaigns: any[] }) {
