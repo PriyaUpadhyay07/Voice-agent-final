@@ -257,8 +257,13 @@ export default function CampaignPage({ campaign, updateCampaign, userId }: Props
           };
         });
 
-        // Tiny delay
-        await new Promise(r => setTimeout(r, 600));
+        // 8-second sequential delay in small 100ms slices so we can react instantly to Stop/Pause button clicks!
+        for (let delayMs = 0; delayMs < 8000; delayMs += 100) {
+          if (cancelledCampaignsRef.current.has(msgId) || pausedCampaignsRef.current.has(msgId)) {
+            break;
+          }
+          await new Promise(r => setTimeout(r, 100));
+        }
       }
 
       // Mark as done

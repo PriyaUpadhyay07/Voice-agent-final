@@ -13,6 +13,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing Vapi credentials" }, { status: 500 });
     }
 
+    // Format to E.164 first
+    let phone = rawPhone.replace(/[^0-9+]/g, ""); 
+    if (!phone.startsWith("+")) {
+      phone = phone.replace(/^(0|91)/, "");
+      if (phone.length === 10) phone = "+91" + phone;
+      else phone = "+" + phone;
+    }
+
+    // FREE MOCK TESTING MODE: Bypass Vapi and database credit deduction for testing numbers containing '555'
+    if (phone.includes("555")) {
+      return NextResponse.json({ success: true, callId: "mock_call_" + Date.now(), mock: true });
+    }
+
     const prisma = new (await import("@prisma/client")).PrismaClient();
     
     // Dynamic user lookup with backward-compatible fallback
@@ -36,14 +49,6 @@ export async function POST(req: Request) {
         walletAmount: { decrement: 0.10 }
       }
     });
-
-    // Format to E.164
-    let phone = rawPhone.replace(/[^0-9+]/g, ""); 
-    if (!phone.startsWith("+")) {
-      phone = phone.replace(/^(0|91)/, "");
-      if (phone.length === 10) phone = "+91" + phone;
-      else phone = "+" + phone;
-    }
 
     // Parse JSON script containing firstMessage and description
     let firstMessage = script;
