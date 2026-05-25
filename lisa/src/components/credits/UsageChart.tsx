@@ -369,8 +369,12 @@ export default function UsageChart({ userId }: { userId?: string }) {
           {displayData.map((item, idx) => {
             const dayNum = viewType === "daily" ? parseInt(item.date.split("-")[2]) : 0;
             
-            // For daily view: only show labels for Day 1, 4, 7, 10... (spaced every 3 days)
-            const shouldShowLabel = viewType === "weekly" || (dayNum === 1 || (dayNum - 1) % 3 === 0);
+            // For daily view: show labels for Day 1, 4, 7, 10... and ALWAYS for the last day of the month!
+            const shouldShowLabel = viewType === "weekly" || (
+              dayNum === 1 || 
+              (dayNum - 1) % 3 === 0 || 
+              idx === displayData.length - 1
+            );
 
             return (
               <div 

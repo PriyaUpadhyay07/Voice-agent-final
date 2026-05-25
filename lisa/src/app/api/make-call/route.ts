@@ -28,10 +28,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Insufficient minutes. Please buy more credits." }, { status: 400 });
     }
 
-    // Deduct 1 minute for this call
+    // Deduct 1 minute and $0.10 (at $1 = 10 mins) for this call
     await prisma.user.update({
       where: { id: user.id },
-      data: { creditsMinutes: { decrement: 1 } }
+      data: { 
+        creditsMinutes: { decrement: 1 },
+        walletAmount: { decrement: 0.10 }
+      }
     });
 
     // Format to E.164

@@ -32,6 +32,16 @@ export async function GET(req: Request) {
       });
     }
 
+    // Self-healing synchronization: Make sure walletAmount (balance) is perfectly in sync with creditsMinutes
+    // based on our plan ($1 = 10 mins -> balance = minutes / 10)
+    const expectedWalletAmount = user.creditsMinutes / 10.0;
+    if (Math.abs(user.walletAmount - expectedWalletAmount) > 0.001) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { walletAmount: expectedWalletAmount }
+      });
+    }
+
     const payments = await prisma.payment.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },

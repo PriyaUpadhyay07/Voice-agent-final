@@ -93,10 +93,13 @@ export async function POST(req: Request) {
           called++;
           console.log("Call started:", phone, callData.id);
           
-          // Deduct 1 minute per call (Simplified for testing)
+          // Deduct 1 minute and $0.10 (at $1 = 10 mins) per call (Simplified for testing)
           await prisma.user.update({
             where: { id: user.id },
-            data: { creditsMinutes: { decrement: 1 } }
+            data: { 
+              creditsMinutes: { decrement: 1 },
+              walletAmount: { decrement: 0.10 }
+            }
           });
         }
       } catch (e: any) {
