@@ -21,10 +21,7 @@ export async function POST(req: Request) {
       else phone = "+" + phone;
     }
 
-    // FREE MOCK TESTING MODE: Bypass Vapi and database credit deduction for testing numbers containing '555'
-    if (phone.includes("555")) {
-      return NextResponse.json({ success: true, callId: "mock_call_" + Date.now(), mock: true });
-    }
+
 
     const prisma = new (await import("@prisma/client")).PrismaClient();
     
