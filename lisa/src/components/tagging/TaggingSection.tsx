@@ -3,11 +3,83 @@ import { useState, useMemo } from "react";
 import type { Lead } from "@/app/page";
 import { Users, Search, Trash2, Clock, Play, X } from "lucide-react";
 
+const getCallOutcome = (log: any) => {
+  const messages = log.messages || [];
+  const customerMessages = messages
+    .filter((m: any) => m.role === "user" || m.role === "customer")
+    .map((m: any) => (m.message || m.content || "").toLowerCase());
+  
+  const text = customerMessages.join(" ");
+  const reason = (log.endedReason || "").toLowerCase();
+  const duration = log.duration || log.durationSeconds || 0;
+  const hasSpoken = customerMessages.length > 0 && customerMessages.join("").trim().length > 0;
+
+  // 1. Pending Conditions (No pickup, busy line, voicemail, or explicitly asked to call back/busy)
+  const isNoAnswer = 
+    reason.includes("no-answer") || 
+    reason.includes("did-not-answer") || 
+    reason.includes("busy") || 
+    reason.includes("rejected") ||
+    reason.includes("voicemail") ||
+    (duration < 10 && !hasSpoken);
+
+  const askedToCallBack = 
+    text.includes("busy") || 
+    text.includes("call back") || 
+    text.includes("later") || 
+    text.includes("not now") || 
+    text.includes("meeting") || 
+    text.includes("driving") || 
+    text.includes("another time") || 
+    text.includes("tomorrow") || 
+    text.includes("next week") || 
+    // Hindi/Hinglish keywords
+    text.includes("baad me") || 
+    text.includes("baad mein") || 
+    text.includes("busy hu") || 
+    text.includes("busy hoon") || 
+    text.includes("kal baat") || 
+    text.includes("parso") || 
+    text.includes("meeting mein") || 
+    text.includes("meeting me") ||
+    reason.includes("voicemail");
+
+  if (isNoAnswer || askedToCallBack) {
+    return { label: "Pending" };
+  }
+
+  // 2. Interested Conditions (Intent shown)
+  const hasInterest = 
+    text.includes("book") || 
+    text.includes("schedule") || 
+    text.includes("appointment") || 
+    text.includes("demo") || 
+    text.includes("send me") || 
+    text.includes("email me") || 
+    text.includes("pricing") || 
+    text.includes("interested") || 
+    // Hindi/Hinglish keywords
+    text.includes("bhej do") || 
+    text.includes("bhej dena") || 
+    text.includes("theek hai") || 
+    text.includes("thek hai") || 
+    text.includes("dilchaspi") || 
+    text.includes("achha hai") || 
+    (text.includes("yes") && (text.includes("please") || text.includes("sure") || text.includes("work")));
+
+  if (hasInterest) {
+    return { label: "Interested" };
+  }
+
+  // 3. Not Interested (Default fallback for any active conversation that hung up without interest)
+  return { label: "Not Interested" };
+};
+
 export default function TaggingSection({ leads, onRunPending, logs = [] }: { leads: Lead[], onRunPending: () => void, logs?: any[] }) {
   const [q, setQ] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // Stores phone number to delete
   const [deletedPhones, setDeletedPhones] = useState<Set<string>>(new Set());
-
+ 
   // Merge leads from campaign sheet and history logs, ensuring uniqueness by phone number
   const allLeads = useMemo(() => {
     const map = new Map();
@@ -19,18 +91,27 @@ export default function TaggingSection({ leads, onRunPending, logs = [] }: { lea
       if (phone && !deletedPhones.has(phone)) {
         const matchingLog = logs.find(log => log.customer?.number === phone);
         const date = l.date || l.createdAt || matchingLog?.startedAt || "N/A";
-        map.set(phone, { ...l, phone, date });
+        
+        let status = l.status || "pending";
+        if (matchingLog) {
+          const outcome = getCallOutcome(matchingLog);
+          status = outcome.label === "Pending" ? "pending" : outcome.label === "Interested" ? "interested" : "not-interested";
+        }
+        
+        map.set(phone, { ...l, phone, date, status });
       }
     });
-
+ 
     // 2. Fallback: Add from logs if sheet is empty or to complement
     logs.forEach(log => {
       const phone = log.customer?.number;
       if (phone && !map.has(phone) && !deletedPhones.has(phone)) {
-        map.set(phone, { phone, status: "pending", date: log.startedAt });
+        const outcome = getCallOutcome(log);
+        const status = outcome.label === "Pending" ? "pending" : outcome.label === "Interested" ? "interested" : "not-interested";
+        map.set(phone, { phone, status, date: log.startedAt });
       }
     });
-
+ 
     return Array.from(map.values());
   }, [leads, logs, deletedPhones]);
 

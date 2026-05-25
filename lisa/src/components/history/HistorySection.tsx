@@ -37,9 +37,9 @@ const getCallOutcome = (log: CallLog) => {
     reason.includes("no-answer") || 
     reason.includes("did-not-answer") || 
     reason.includes("busy") || 
-    reason.includes("rejected") || 
-    duration < 8 || 
-    !hasSpoken;
+    reason.includes("rejected") ||
+    reason.includes("voicemail") ||
+    (duration < 10 && !hasSpoken); // Very short call with no customer speech is likely a no-pickup/voicemail
 
   const askedToCallBack = 
     text.includes("busy") || 
@@ -49,6 +49,17 @@ const getCallOutcome = (log: CallLog) => {
     text.includes("meeting") || 
     text.includes("driving") || 
     text.includes("another time") || 
+    text.includes("tomorrow") || 
+    text.includes("next week") || 
+    // Hindi/Hinglish keywords
+    text.includes("baad me") || 
+    text.includes("baad mein") || 
+    text.includes("busy hu") || 
+    text.includes("busy hoon") || 
+    text.includes("kal baat") || 
+    text.includes("parso") || 
+    text.includes("meeting mein") || 
+    text.includes("meeting me") ||
     reason.includes("voicemail");
 
   if (isNoAnswer || askedToCallBack) {
@@ -65,6 +76,13 @@ const getCallOutcome = (log: CallLog) => {
     text.includes("email me") || 
     text.includes("pricing") || 
     text.includes("interested") || 
+    // Hindi/Hinglish keywords
+    text.includes("bhej do") || 
+    text.includes("bhej dena") || 
+    text.includes("theek hai") || 
+    text.includes("thek hai") || 
+    text.includes("dilchaspi") || 
+    text.includes("achha hai") || 
     (text.includes("yes") && (text.includes("please") || text.includes("sure") || text.includes("work")));
 
   if (hasInterest) {

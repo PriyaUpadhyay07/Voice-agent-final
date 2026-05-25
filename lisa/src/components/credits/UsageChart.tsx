@@ -386,7 +386,7 @@ export default function UsageChart({ userId }: { userId?: string }) {
                   transition: "opacity 0.15s"
                 }}
               >
-                {viewType === "daily" ? item.date : item.date}
+                {viewType === "daily" ? (shouldShowLabel ? item.date : "") : item.date}
               </div>
             );
           })}
