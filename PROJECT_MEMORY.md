@@ -35,3 +35,14 @@ This file tracks permanently removed features, user preferences, and implementat
 - Vanilla CSS (Rich/Premium Aesthetics)
 - SignalWire (Telephony)
 - ElevenLabs (AI Voice)
+
+## 🚨 CRITICAL: Vercel Deployment & Client URLs (NEVER FORGET)
+- **Vercel deploys from `lisa/` directory**, NOT from root `/`. All code changes for the live site go in `lisa/`.
+- `src/app/` (root app) routes like `/client`, `/api/clients` do NOT exist on Vercel — they return 404.
+- **Central Admin Link**: `https://voice-agent-final-hfv9.vercel.app/`
+- **Client Portal Link Format**: `https://voice-agent-final-hfv9.vercel.app/{userId}`
+  - Example (Riya): `https://voice-agent-final-hfv9.vercel.app/cmplclmxv0000xbavsd7ozeb6`
+- The `lisa/src/app/[userId]/page.tsx` dynamic route handles all client dashboards.
+- Each client gets a unique `userId` from the DB → append it to the central link → isolated dashboard.
+- **NEVER** use `/client?userId=xxx` format — it does NOT work on Vercel.
+- **NEVER** add hardcoded Priya fallbacks in API routes — always return 404 if user not found.

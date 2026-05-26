@@ -102,6 +102,9 @@ export async function POST(req: Request) {
           number: phone,
           name: lead.name || lead.Name || lead.NAME || undefined,
         },
+        metadata: {
+          userId: user.id
+        },
         assistantOverrides: Object.keys(assistantOverrides).length > 0 ? assistantOverrides : undefined
       }),
     });

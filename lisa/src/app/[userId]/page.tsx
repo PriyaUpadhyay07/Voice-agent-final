@@ -193,10 +193,11 @@ function DashboardContent({ userId }: { userId: string }) {
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/history?limit=100")
+    if (!userId) return;
+    fetch(`/api/history?limit=100&userId=${userId}`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setLogs(data); });
-  }, [activeCampaign]);
+  }, [activeCampaign, userId]);
 
   const runPendingCalls = () => {
     const map = new Map();

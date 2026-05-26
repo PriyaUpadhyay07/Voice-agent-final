@@ -45,3 +45,5 @@ lisa.env
 next-env.d.ts
 
 /src/generated/prisma
+/scratch
+/src/check-vapi-credentials.js

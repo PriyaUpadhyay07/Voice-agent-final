@@ -89,6 +89,9 @@ export async function POST(req: Request) {
               number: phone,
               name: lead.name || lead.Name || lead.NAME || undefined,
             },
+            metadata: {
+              userId: user?.id
+            },
             assistantOverrides: user?.voiceId ? {
               voice: {
                 provider: user.voiceProvider || "elevenlabs",
