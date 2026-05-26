@@ -16,20 +16,7 @@ export async function GET(req: Request) {
     }
 
     if (!user) {
-      user = await prisma.user.findUnique({
-        where: { email: "upadhyaypriya974@gmail.com" }
-      });
-    }
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: "upadhyaypriya974@gmail.com",
-          name: "Priya",
-          walletAmount: 10.00,
-          creditsMinutes: 100
-        }
-      });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Self-healing synchronization: Make sure walletAmount (balance) is perfectly in sync with creditsMinutes

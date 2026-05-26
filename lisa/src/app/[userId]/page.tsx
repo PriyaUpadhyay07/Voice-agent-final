@@ -50,8 +50,8 @@ function DashboardContent({ userId }: { userId: string }) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [activeCampaignId, setActiveCampaignId] = useState<string>("");
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [userName, setUserName] = useState<string>("Priya");
-  const [userEmail, setUserEmail] = useState<string>("upadhyaypriya974@gmail.com");
+  const [userName, setUserName] = useState<string>("Loading...");
+  const [userEmail, setUserEmail] = useState<string>("");
   const [resolvedUserId, setResolvedUserId] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
