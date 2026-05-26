@@ -312,7 +312,7 @@ function DashboardContent({ userId }: { userId: string }) {
               onRunPending={runPendingCalls}
             />
           )}
-          {activeTab === "history" && <HistorySection campaigns={campaigns} />}
+          {activeTab === "history" && <HistorySection campaigns={campaigns} userId={resolvedUserId || userId} />}
           {activeTab === "credits" && <CreditsSection userId={resolvedUserId || userId} />}
         </div>
       </div>

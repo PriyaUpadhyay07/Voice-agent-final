@@ -93,7 +93,7 @@ const getCallOutcome = (log: CallLog) => {
   return { label: "Not Interested", color: "var(--red)", bg: "rgba(239,68,68,0.15)" };
 };
 
-export default function HistorySection({ campaigns }: { campaigns: any[] }) {
+export default function HistorySection({ campaigns, userId }: { campaigns: any[], userId?: string }) {
   const [logs, setLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCall, setSelectedCall] = useState<CallLog | null>(null);
@@ -104,12 +104,12 @@ export default function HistorySection({ campaigns }: { campaigns: any[] }) {
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [userId]);
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/history?limit=100");
+      const res = await fetch(`/api/history?limit=100&userId=${userId || ""}`);
       const data = await res.json();
       if (Array.isArray(data)) {
         // Isolation Logic: Filter calls to only show those that belong to our leads
