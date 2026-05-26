@@ -74,8 +74,8 @@ function ClientDemoContent() {
       const session = await getClientSession();
       const adminRequestedUserId = searchParams.get('userId');
       
-      // Smart Solution: If Admin is logged in, allow viewing any client portal via userId param
-      if ((session?.user as any)?.role === 'ADMIN' && adminRequestedUserId) {
+      // If userId query param is present, always fetch and load that client's dashboard directly (Bypass authentication checks for portable portal links)
+      if (adminRequestedUserId) {
         const clientsRes = await fetch('/api/clients');
         const clients = await clientsRes.json();
         
@@ -592,7 +592,9 @@ function ClientDemoContent() {
         {/* HEADER */}
         <header style={{ padding: '1.5rem 2rem', borderBottom: '1px solid hsl(var(--border))', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>AI Calling Dashboard</h1>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+              AI Calling Dashboard {clientData && `— ${clientData.name || 'No Name'} (${clientData.email})`}
+            </h1>
             <p style={{ color: 'hsl(var(--muted-foreground))', fontSize: '0.9rem' }}>{activeBatch ? `Viewing: ${activeBatch}` : 'Create a new campaign'}</p>
           </div>
           
