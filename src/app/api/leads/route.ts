@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userRole = (session.user as any).role;
+  const userRole = String((session.user as any).role || '').toUpperCase();
   let userId = (session.user as any).id;
 
-  // If admin, they might want to filter by userId query param
+  // Allow filtering by userId query param for multi-tenant portal links
   const queryUserId = request.nextUrl.searchParams.get('userId');
-  if (userRole === 'ADMIN' && queryUserId) {
+  if (queryUserId) {
     userId = queryUserId;
   }
 
@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { userId: bodyUserId, leads: bulkLeads, phone, name, company, batchId, action, status: resetStatus } = body;
   
-  const userRole = (session.user as any).role;
+  const userRole = String((session.user as any).role || '').toUpperCase();
   let targetUserId = (session.user as any).id;
-  if (userRole === 'ADMIN' && bodyUserId) {
+  if (bodyUserId) {
     targetUserId = bodyUserId;
   }
 

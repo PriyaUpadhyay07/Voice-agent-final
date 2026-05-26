@@ -19,7 +19,7 @@ export async function GET(
 
   // Only allow user to access their own data, or admin to access anyone
   const userId = (session.user as any).id;
-  const userRole = (session.user as any).role;
+  const userRole = String((session.user as any).role || '').toLowerCase();
 
   if (userId !== id && userRole !== 'admin') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -65,7 +65,7 @@ export async function PATCH(
   }
 
   const userId = (session.user as any).id;
-  const userRole = (session.user as any).role;
+  const userRole = String((session.user as any).role || '').toLowerCase();
 
   // Only admin or the owner can update
   if (userId !== id && userRole !== 'admin') {
