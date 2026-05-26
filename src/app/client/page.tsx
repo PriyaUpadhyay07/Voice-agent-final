@@ -7,7 +7,7 @@ import {
   XCircle, Loader2, CreditCard, Shield, ChevronDown, MoreHorizontal, Edit2, Pin, Share2, Trash2, Activity
 } from 'lucide-react';
 import { resilientFetch } from '@/lib/fetch-utils';
-import { loginWithEmail, getClientSession } from './actions';
+import { loginWithEmail, getClientSession, getClientById, getClientByEmail } from './actions';
 import * as XLSX from 'xlsx';
 
 type Lead = {
@@ -74,42 +74,26 @@ function ClientDemoContent() {
       const session = await getClientSession();
       const adminRequestedUserId = searchParams.get('userId');
       
-      // If userId query param is present, always fetch and load that client's dashboard directly (Bypass authentication checks for portable portal links)
+      // If userId query param is present, directly load that client's data from DB (no API route needed)
       if (adminRequestedUserId) {
-        const clientsRes = await fetch('/api/clients');
-        const clients = await clientsRes.json();
+        const targetClient = await getClientById(adminRequestedUserId);
         
-        if (Array.isArray(clients)) {
-          const targetClient = clients.find((c: any) => c.id === adminRequestedUserId);
-          
-          if (targetClient) {
-            setEmail(targetClient.email);
-            setClientData(targetClient);
-            setScript(targetClient.script || targetClient.script === '' ? targetClient.script : script);
-            await fetchMyLeads(targetClient.id);
-            setIsLoggedIn(true);
-            setLoading(false);
-            return;
-          }
+        if (targetClient) {
+          setEmail(targetClient.email);
+          setClientData(targetClient);
+          setScript(targetClient.script || targetClient.script === '' ? targetClient.script : script);
+          await fetchMyLeads(targetClient.id);
+          setIsLoggedIn(true);
+          setLoading(false);
+          return;
         }
       }
 
       if (session?.user?.email) {
         setEmail(session.user.email);
         
-        // Fetch client data
-        const clientsRes = await fetch('/api/clients');
-        const clients = await clientsRes.json();
-        let me = null;
-        
-        if (Array.isArray(clients)) {
-          if (adminRequestedUserId) {
-            me = clients.find((c: any) => c.id === adminRequestedUserId);
-          }
-          if (!me) {
-            me = clients.find((c: any) => c.email === (session?.user as any)?.email);
-          }
-        }
+        // Fetch client data directly from DB via server action
+        let me = await getClientByEmail(session.user.email);
         
         if (!me) {
           // Auto-create dummy client data for demo if not in DB yet
