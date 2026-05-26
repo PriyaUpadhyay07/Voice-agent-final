@@ -82,8 +82,9 @@ export async function POST(req: Request) {
     }
 
     if (user.voiceId) {
+      const dbProvider = user.voiceProvider || "elevenlabs";
       assistantOverrides.voice = {
-        provider: user.voiceProvider || "elevenlabs",
+        provider: dbProvider === "elevenlabs" ? "11labs" : dbProvider,
         voiceId: user.voiceId
       };
     }
