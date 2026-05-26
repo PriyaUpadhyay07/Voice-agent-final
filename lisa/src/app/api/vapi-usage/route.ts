@@ -42,7 +42,10 @@ export async function GET(req: Request) {
         
         data.forEach((call: any) => {
           // Verify if this call belongs to the requested user
-          const matchCallerId = user.callerId && call.phoneNumberId === user.callerId;
+          const isSharedNumber = user.callerId === "f1ce0592-e96c-4229-8faa-7ece089440a8";
+          const matchCallerId = user.callerId && 
+                                call.phoneNumberId === user.callerId && 
+                                !isSharedNumber;
           const matchMetadata = call.metadata?.userId === user.id;
 
           if (matchCallerId || matchMetadata) {

@@ -38,8 +38,11 @@ export async function GET(req: Request) {
     if (Array.isArray(data)) {
       if (user) {
         const filtered = data.filter((call: any) => {
-          // 1. Match by custom callerId linked to this user
-          const matchCallerId = user.callerId && call.phoneNumberId === user.callerId;
+          // 1. Match by custom, non-shared callerId linked to this user
+          const isSharedNumber = user.callerId === "f1ce0592-e96c-4229-8faa-7ece089440a8";
+          const matchCallerId = user.callerId && 
+                                call.phoneNumberId === user.callerId && 
+                                !isSharedNumber;
           // 2. Match by metadata.userId passed during call initiation
           const matchMetadata = call.metadata?.userId === user.id;
           return matchCallerId || matchMetadata;
