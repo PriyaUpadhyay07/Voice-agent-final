@@ -20,6 +20,9 @@ model User {
   walletAmount    Float     @default(0)
   creditsMinutes  Float     @default(0)     // Total calling minutes remaining
   script          String?   @default("")
+  callerId        String?   @default("")     // Vapi phone number ID or custom Caller ID
+  voiceId         String?   @default("")     // Custom AI Voice ID (e.g., ElevenLabs)
+  voiceProvider   String?   @default("elevenlabs") // Custom Voice Provider
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   accounts        Account[]

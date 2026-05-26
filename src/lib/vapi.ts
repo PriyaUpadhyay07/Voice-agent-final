@@ -12,6 +12,9 @@ interface VapiCallOptions {
   leadName?: string;       // Name of the lead (for personalization)
   leadCompany?: string;    // Company name
   customScript?: string;   // Custom script/first message
+  callerId?: string;       // Custom Caller ID (optional)
+  voiceId?: string;        // Custom Voice ID (optional)
+  voiceProvider?: string;  // Custom Voice Provider (optional)
 }
 
 interface VapiCallResponse {
@@ -31,7 +34,7 @@ export async function createVapiCall(options: VapiCallOptions): Promise<VapiCall
   if (!apiKey) throw new Error('VAPI_PRIVATE_KEY is not configured');
   if (!assistantId) throw new Error('VAPI_ASSISTANT_ID is not configured');
 
-  // Build the assistant overrides if custom script is provided
+  // Build the assistant overrides if custom script or voiceId is provided
   const assistantOverrides: any = {};
   
   if (options.customScript) {
@@ -40,17 +43,24 @@ export async function createVapiCall(options: VapiCallOptions): Promise<VapiCall
       .replace('{{lead_company}}', options.leadCompany || 'your company');
   }
 
+  if (options.voiceId) {
+    assistantOverrides.voice = {
+      provider: options.voiceProvider || 'elevenlabs',
+      voiceId: options.voiceId
+    };
+  }
+
   const body: any = {
     assistantId,
     customer: {
       number: options.phoneNumber,
       name: options.leadName,
     },
-    // Use the imported BYOC (SignalWire) number ID from VAPI dashboard
-    phoneNumberId: process.env.VAPI_PHONE_NUMBER_ID,
+    // Use the custom caller ID if set, or the default BYOC number ID from VAPI dashboard
+    phoneNumberId: options.callerId || process.env.VAPI_PHONE_NUMBER_ID,
   };
 
-  // Add assistant overrides if we have custom script
+  // Add assistant overrides if we have custom script or voiceId overrides
   if (Object.keys(assistantOverrides).length > 0) {
     body.assistantOverrides = assistantOverrides;
   }

@@ -103,7 +103,12 @@ function ClientDemoContent() {
         let me = null;
         
         if (Array.isArray(clients)) {
-          me = clients.find((c: any) => (c.email === (session?.user as any)?.email) || (adminRequestedUserId && c.id === adminRequestedUserId));
+          if (adminRequestedUserId) {
+            me = clients.find((c: any) => c.id === adminRequestedUserId);
+          }
+          if (!me) {
+            me = clients.find((c: any) => c.email === (session?.user as any)?.email);
+          }
         }
         
         if (!me) {

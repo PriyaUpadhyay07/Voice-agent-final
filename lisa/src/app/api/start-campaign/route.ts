@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { leads, script } = body;
+    const { leads, script, userId } = body;
 
     const apiKey      = process.env.VAPI_PRIVATE_KEY;
     const assistantId = process.env.VAPI_ASSISTANT_ID;
@@ -18,7 +18,14 @@ export async function POST(req: Request) {
     }
 
     const prisma = new (await import("@prisma/client")).PrismaClient();
-    const user = await prisma.user.findUnique({ where: { email: "upadhyaypriya974@gmail.com" } });
+    
+    let user;
+    if (userId) {
+      user = await prisma.user.findUnique({ where: { id: userId } });
+    }
+    if (!user) {
+      user = await prisma.user.findUnique({ where: { email: "upadhyaypriya974@gmail.com" } });
+    }
     
     if (!user || user.creditsMinutes < leads.length) {
       return NextResponse.json({ 
@@ -77,11 +84,17 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             assistantId,
-            phoneNumberId: phoneNumId,
+            phoneNumberId: user?.callerId || phoneNumId, // Dynamic caller ID
             customer: {
               number: phone,
               name: lead.name || lead.Name || lead.NAME || undefined,
             },
+            assistantOverrides: user?.voiceId ? {
+              voice: {
+                provider: user.voiceProvider || "elevenlabs",
+                voiceId: user.voiceId
+              }
+            } : undefined
           }),
         });
 

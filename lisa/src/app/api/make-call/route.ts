@@ -65,6 +65,29 @@ export async function POST(req: Request) {
       ? `You are Lisa, a professional cold calling assistant. Your greeting is: "${firstMessage}". Business Info / Script context:\n${description}\nKeep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`
       : `You are Lisa, a professional cold calling assistant. Your greeting is: "${firstMessage}". Keep your answers extremely short, natural, and follow the flow of the greeting. Direct the user towards the goal of the call.`;
 
+    // Construct assistant overrides dynamically
+    const assistantOverrides: any = {};
+    if (script) {
+      assistantOverrides.firstMessage = firstMessage;
+      assistantOverrides.model = {
+        provider: "openai",
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: systemPromptContent
+          }
+        ]
+      };
+    }
+
+    if (user.voiceId) {
+      assistantOverrides.voice = {
+        provider: user.voiceProvider || "elevenlabs",
+        voiceId: user.voiceId
+      };
+    }
+
     // Make the call with complete assistantOverrides
     const callRes = await fetch("https://api.vapi.ai/call/phone", {
       method: "POST",
@@ -74,24 +97,12 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         assistantId,
-        phoneNumberId: phoneNumId,
+        phoneNumberId: user.callerId || phoneNumId, // Dynamically use client caller ID if set
         customer: {
           number: phone,
           name: lead.name || lead.Name || lead.NAME || undefined,
         },
-        assistantOverrides: script ? {
-          firstMessage: firstMessage,
-          model: {
-            provider: "openai",
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content: systemPromptContent
-              }
-            ]
-          }
-        } : undefined
+        assistantOverrides: Object.keys(assistantOverrides).length > 0 ? assistantOverrides : undefined
       }),
     });
 

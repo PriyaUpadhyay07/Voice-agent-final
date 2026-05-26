@@ -72,6 +72,9 @@ export async function POST(request: NextRequest) {
         leadName: lead.name,
         leadCompany: lead.company || undefined,
         customScript: lead.user.script || undefined,
+        callerId: lead.user.callerId || undefined,
+        voiceId: lead.user.voiceId || undefined,
+        voiceProvider: lead.user.voiceProvider || undefined,
       });
       console.log(`[DEBUG] Vapi success! ID: ${vapiResponse.id}`);
 
