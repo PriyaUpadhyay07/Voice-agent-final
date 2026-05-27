@@ -85,7 +85,8 @@ export async function POST(req: Request) {
       const dbProvider = user.voiceProvider || "elevenlabs";
       assistantOverrides.voice = {
         provider: dbProvider === "elevenlabs" ? "11labs" : dbProvider,
-        voiceId: user.voiceId
+        voiceId: user.voiceId,
+        model: dbProvider === "elevenlabs" ? "eleven_turbo_v2" : undefined
       };
     }
 

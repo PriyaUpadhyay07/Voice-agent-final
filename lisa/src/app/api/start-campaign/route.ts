@@ -95,7 +95,8 @@ export async function POST(req: Request) {
             assistantOverrides: user?.voiceId ? {
               voice: {
                 provider: (user.voiceProvider === "elevenlabs" ? "11labs" : user.voiceProvider) || "11labs",
-                voiceId: user.voiceId
+                voiceId: user.voiceId,
+                model: (user.voiceProvider === "elevenlabs" || !user.voiceProvider) ? "eleven_turbo_v2" : undefined
               }
             } : undefined
           }),
