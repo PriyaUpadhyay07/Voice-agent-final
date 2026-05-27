@@ -129,19 +129,7 @@ export default function DemoPortal() {
         zIndex: 0, pointerEvents: 'none'
       }} />
 
-      {/* Pure CSS 3D Shapes */}
-      <div className="floating-pills" style={{ display: 'flex', flexDirection: 'column', gap: '-20px', transform: 'rotate(-20deg)' }}>
-        <div style={{ width: '90px', height: '140px', background: 'linear-gradient(135deg, #a78bfa, #8b5cf6)', borderRadius: '99px', boxShadow: 'inset -10px -10px 20px rgba(0,0,0,0.3), inset 10px 10px 20px rgba(255,255,255,0.4), 10px 20px 30px rgba(0,0,0,0.5)', zIndex: 1, marginTop: '40px', marginLeft: '40px' }} />
-        <div style={{ width: '90px', height: '140px', background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '99px', boxShadow: 'inset -10px -10px 20px rgba(0,0,0,0.3), inset 10px 10px 20px rgba(255,255,255,0.4), 10px 20px 30px rgba(0,0,0,0.5)', zIndex: 2, marginTop: '-100px', marginLeft: '20px' }} />
-        <div style={{ width: '90px', height: '140px', background: 'linear-gradient(135deg, #2dd4bf, #0ea5e9)', borderRadius: '99px', boxShadow: 'inset -10px -10px 20px rgba(0,0,0,0.3), inset 10px 10px 20px rgba(255,255,255,0.4), 10px 20px 30px rgba(0,0,0,0.5)', zIndex: 3, marginTop: '-100px', marginLeft: '0px' }} />
-      </div>
 
-      <div className="floating-flower" style={{ position: 'relative', width: '160px', height: '160px' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #c084fc, #8b5cf6)', borderRadius: '99px', transform: 'rotate(0deg)', boxShadow: 'inset -5px -5px 15px rgba(0,0,0,0.3), inset 5px 5px 15px rgba(255,255,255,0.4)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #818cf8, #6366f1)', borderRadius: '99px', transform: 'rotate(45deg)', boxShadow: 'inset -5px -5px 15px rgba(0,0,0,0.3), inset 5px 5px 15px rgba(255,255,255,0.4)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', borderRadius: '99px', transform: 'rotate(90deg)', boxShadow: 'inset -5px -5px 15px rgba(0,0,0,0.3), inset 5px 5px 15px rgba(255,255,255,0.4)' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #34d399, #10b981)', borderRadius: '99px', transform: 'rotate(135deg)', boxShadow: 'inset -5px -5px 15px rgba(0,0,0,0.3), inset 5px 5px 15px rgba(255,255,255,0.4)' }} />
-      </div>
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '5px', paddingBottom: '40px', width: '100%' }}>
         
