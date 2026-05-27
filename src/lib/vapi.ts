@@ -12,6 +12,7 @@ interface VapiCallOptions {
   leadName?: string;       // Name of the lead (for personalization)
   leadCompany?: string;    // Company name
   customScript?: string;   // Custom script/first message
+  systemPrompt?: string;   // Custom system prompt/instructions
   callerId?: string;       // Custom Caller ID (optional)
   voiceId?: string;        // Custom Voice ID (optional)
   voiceProvider?: string;  // Custom Voice Provider (optional)
@@ -41,6 +42,19 @@ export async function createVapiCall(options: VapiCallOptions): Promise<VapiCall
     assistantOverrides.firstMessage = options.customScript
       .replace('{{lead_name}}', options.leadName || 'there')
       .replace('{{lead_company}}', options.leadCompany || 'your company');
+  }
+
+  if (options.systemPrompt) {
+    assistantOverrides.model = {
+      provider: 'openai',
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: options.systemPrompt
+        }
+      ]
+    };
   }
 
   if (options.voiceId) {
