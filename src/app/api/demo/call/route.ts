@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const formattedPhone = formatPhoneNumber(phone);
     console.log(`[DEBUG DEMO] Initiating direct VAPI call to: ${formattedPhone}`);
 
-    const demoScript = "Hi! I am an AI calling agent. I work much better than humans and can handle bulk calling for you effortlessly. You can easily integrate and use me to call all of your leads in minutes! By the way, this call is just for testing, so you can see first-hand how professional and expert I am at my job. If you have any questions or would like to test my knowledge, please go ahead and ask!";
+    const demoScript = "Hi! I am an AI calling agent, and I can help you in bulk cold calling. Feel free to ask me anything to test my capabilities!";
 
     const demoSystemPrompt = "You are a friendly, highly professional, and expert AI Calling Agent designed to showcase the power of AI voice technology to business visitors. Your name is Lisa. Keep your responses extremely short, natural, professional, and positive. If the visitor asks you questions or tests your knowledge, reply in a helpful, conversational, and flawless manner, proving how intelligent and expert you are.";
 
