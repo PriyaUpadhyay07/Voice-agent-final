@@ -60,11 +60,12 @@ function DashboardContent() {
 
   const searchParams = useSearchParams();
   const userId = searchParams.get("userId") || searchParams.get("id") || "";
+  const resolvedUserIdFallback = userId || "cmp41adpl0000rxkpm9mykjk9";
 
   // 1. Load User Profile & Campaigns from Database
   useEffect(() => {
     // Load profile
-    fetch(`/api/credits?userId=${userId}`)
+    fetch(`/api/credits?userId=${resolvedUserIdFallback}`)
       .then(res => res.json())
       .then(data => {
         if (data && data.name) {
@@ -73,7 +74,7 @@ function DashboardContent() {
         }
 
         // Resolve database user ID
-        const activeUserId = data.id || userId;
+        const activeUserId = data.id || resolvedUserIdFallback;
         if (activeUserId) {
           setResolvedUserId(activeUserId);
 
@@ -197,10 +198,11 @@ function DashboardContent() {
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("/api/history?limit=100")
+    const targetUid = resolvedUserId || resolvedUserIdFallback;
+    fetch(`/api/history?limit=100&userId=${targetUid}`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setLogs(data); });
-  }, [activeCampaign]);
+  }, [activeCampaign, resolvedUserId, resolvedUserIdFallback]);
 
   const runPendingCalls = () => {
     // 1. Identify all unique leads (merged sheet + history)

@@ -13,6 +13,10 @@ export async function GET(req: Request) {
       user = await prisma.user.findUnique({
         where: { id: userId }
       });
+    } else {
+      user = await prisma.user.findUnique({
+        where: { email: "upadhyaypriya974@gmail.com" }
+      });
     }
 
     if (!user) {

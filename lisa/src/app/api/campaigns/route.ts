@@ -7,7 +7,14 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const userId = searchParams.get("userId");
+    let userId = searchParams.get("userId");
+
+    if (!userId) {
+      const user = await prisma.user.findUnique({
+        where: { email: "upadhyaypriya974@gmail.com" }
+      });
+      userId = user?.id || null;
+    }
 
     if (!userId) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });

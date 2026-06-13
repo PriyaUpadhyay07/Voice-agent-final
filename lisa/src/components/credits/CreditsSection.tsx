@@ -85,7 +85,7 @@ export default function CreditsSection({ userId }: { userId?: string }) {
             <p style={{ color: "#888", fontSize: 14, marginBottom: 12 }}>Credit Balance:</p>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <Coins size={28} color="var(--green)" />
-              {balance === null ? (
+              {balance === null || balance === undefined || typeof balance !== 'number' ? (
                 <div className="pulse" style={{ width: 140, height: 50, background: "rgba(255,255,255,0.05)", borderRadius: 12, backdropFilter: "blur(4px)" }} />
               ) : (
                 <span style={{ fontSize: 42, fontWeight: 700 }}>${balance.toFixed(2)}</span>
@@ -122,7 +122,7 @@ export default function CreditsSection({ userId }: { userId?: string }) {
         }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
             <h3 style={{ fontSize: 24, fontWeight: 600 }}>Minutes</h3>
-            {minutes === null ? (
+            {minutes === null || minutes === undefined || typeof minutes !== 'number' ? (
               <div className="pulse" style={{ width: 90, height: 32, background: "rgba(255,255,255,0.05)", borderRadius: 8, backdropFilter: "blur(4px)" }} />
             ) : (
               <span style={{ fontSize: 24, fontWeight: 600 }}>{minutes.toFixed(0)}</span>
