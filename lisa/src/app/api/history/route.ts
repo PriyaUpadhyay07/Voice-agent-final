@@ -41,12 +41,15 @@ export async function GET(req: Request) {
     // Filter calls strictly for the requested user to ensure proper data isolation
     if (Array.isArray(data)) {
       if (user) {
+        const isAdmin = user.email === "upadhyaypriya974@gmail.com" || user.email === "webdesignerpriya73@gmail.com";
         const filtered = data.filter((call: any) => {
+          if (isAdmin) return true; // Bypass filters for admin/owner
+          
           // 1. Match by custom, non-shared callerId linked to this user
           const isSharedNumber = user.callerId === "f1ce0592-e96c-4229-8faa-7ece089440a8";
           const matchCallerId = user.callerId && 
-                                call.phoneNumberId === user.callerId && 
-                                !isSharedNumber;
+                                 call.phoneNumberId === user.callerId && 
+                                 !isSharedNumber;
           // 2. Match by metadata.userId passed during call initiation
           const matchMetadata = call.metadata?.userId === user.id;
           return matchCallerId || matchMetadata;

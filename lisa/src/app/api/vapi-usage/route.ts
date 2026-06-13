@@ -19,6 +19,10 @@ export async function GET(req: Request) {
       user = await prisma.user.findUnique({
         where: { id: userId }
       });
+    } else {
+      user = await prisma.user.findUnique({
+        where: { email: "upadhyaypriya974@gmail.com" }
+      });
     }
 
     if (!user) {
@@ -40,6 +44,7 @@ export async function GET(req: Request) {
       if (Array.isArray(data)) {
         const dailyUsage: { [key: string]: number } = {};
         
+        const isAdmin = user.email === "upadhyaypriya974@gmail.com" || user.email === "webdesignerpriya73@gmail.com";
         data.forEach((call: any) => {
           // Verify if this call belongs to the requested user
           const isSharedNumber = user.callerId === "f1ce0592-e96c-4229-8faa-7ece089440a8";
@@ -48,7 +53,7 @@ export async function GET(req: Request) {
                                 !isSharedNumber;
           const matchMetadata = call.metadata?.userId === user.id;
 
-          if (matchCallerId || matchMetadata) {
+          if (isAdmin || matchCallerId || matchMetadata) {
             if (!call.createdAt) return;
             const dateStr = call.createdAt.split("T")[0];
             const mins = (call.duration || 0) / 60; // duration is in seconds
