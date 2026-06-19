@@ -339,8 +339,8 @@ function DashboardContent() {
               onRunPending={runPendingCalls}
             />
           )}
-          {activeTab === "history" && <HistorySection campaigns={campaigns} />}
-          {activeTab === "credits" && <CreditsSection userId={resolvedUserId || userId} />}
+          {activeTab === "history" && <HistorySection campaigns={campaigns} userId={resolvedUserId || resolvedUserIdFallback} />}
+          {activeTab === "credits" && <CreditsSection userId={resolvedUserId || resolvedUserIdFallback} />}
         </div>
       </div>
     </div>

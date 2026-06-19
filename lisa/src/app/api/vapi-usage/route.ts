@@ -56,7 +56,16 @@ export async function GET(req: Request) {
           if (isAdmin || matchCallerId || matchMetadata) {
             if (!call.createdAt) return;
             const dateStr = call.createdAt.split("T")[0];
-            const mins = (call.duration || 0) / 60; // duration is in seconds
+            // Calculate call duration in seconds with robust fallbacks
+            let durationSeconds = call.duration || call.durationSeconds || 0;
+            if (!durationSeconds && call.startedAt && call.endedAt) {
+              const start = new Date(call.startedAt).getTime();
+              const end = new Date(call.endedAt).getTime();
+              if (!isNaN(start) && !isNaN(end)) {
+                durationSeconds = Math.max(0, (end - start) / 1000);
+              }
+            }
+            const mins = durationSeconds / 60;
             dailyUsage[dateStr] = (dailyUsage[dateStr] || 0) + mins;
             totalMinutes += mins;
           }
