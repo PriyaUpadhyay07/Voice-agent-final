@@ -55,6 +55,7 @@ function DashboardContent() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [userName, setUserName] = useState<string>("Priya");
   const [userEmail, setUserEmail] = useState<string>("upadhyaypriya974@gmail.com");
+  const [userStatus, setUserStatus] = useState<string>("active");
   const [resolvedUserId, setResolvedUserId] = useState<string>("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -71,6 +72,7 @@ function DashboardContent() {
         if (data && data.name) {
           setUserName(data.name);
           if (data.email) setUserEmail(data.email);
+          if (data.status) setUserStatus(data.status);
         }
 
         // Resolve database user ID
@@ -313,8 +315,30 @@ function DashboardContent() {
 
       {/* Main Content Area */}
       <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}>
+        {userStatus === "demo" && (
+          <div style={{
+            background: "rgba(245, 158, 11, 0.15)",
+            borderBottom: "1px solid rgba(245, 158, 11, 0.25)",
+            padding: "10px 20px",
+            color: "#fbbf24",
+            fontSize: "13.5px",
+            fontWeight: "500",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "8px",
+            zIndex: 90,
+            textAlign: "center"
+          }}>
+            <span>⚠️</span>
+            <span>
+              <strong>Demo Mode:</strong> Testing ke liye CSV/Google Sheet me sirf 1-2 leads rakhein. Campaign max 2 leads ko hi call karega. Zyada leads ke liye credits buy karein.
+            </span>
+          </div>
+        )}
         {/* Dynamic margin/padding wrapper to ensure toggle button never overlaps headings */}
         <div 
+
           className="content-wrapper"
           style={{ 
             flex: 1, 

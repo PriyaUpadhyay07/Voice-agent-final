@@ -27,9 +27,15 @@ export async function POST(req: Request) {
       user = await prisma.user.findUnique({ where: { email: "upadhyaypriya974@gmail.com" } });
     }
     
-    if (!user || user.creditsMinutes < leads.length) {
+    const isDemo = user && (user.status === "demo" || user.creditsMinutes <= 2.0);
+    let activeLeads = leads;
+    if (isDemo && leads.length > 2) {
+      activeLeads = leads.slice(0, 2);
+    }
+
+    if (!user || user.creditsMinutes < activeLeads.length) {
       return NextResponse.json({ 
-        error: `Insufficient minutes. You have ${user?.creditsMinutes || 0} mins but trying to call ${leads.length} leads. Please buy more credits.` 
+        error: `Insufficient minutes. You have ${user?.creditsMinutes || 0} mins but trying to call ${activeLeads.length} leads. Please buy more credits.` 
       }, { status: 400 });
     }
 
@@ -55,7 +61,7 @@ export async function POST(req: Request) {
     let called = 0;
     const errors: string[] = [];
 
-    for (const lead of leads) {
+    for (const lead of activeLeads) {
       // Find phone column (case-insensitive)
       const phoneKey = Object.keys(lead).find((k) =>
         /phone|mobile|contact/i.test(k)
@@ -128,7 +134,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({
       called,
-      total: leads.length,
+      total: activeLeads.length,
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (err: any) {

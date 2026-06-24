@@ -33,8 +33,8 @@ async function main() {
   const args = process.argv.slice(2);
   if (args.length < 2) {
     console.log("\n❌ Error: Missing arguments!");
-    console.log("Usage: node register-user.js <Name> <Email> [Minutes]");
-    console.log("Example: node register-user.js \"Amit\" \"amit@example.com\" 100\n");
+    console.log("Usage: node register-user.js <Name> <Email> [Minutes] [Status]");
+    console.log("Example: node register-user.js \"Amit\" \"amit@example.com\" 2 \"demo\"\n");
     process.exit(1);
   }
 
@@ -42,8 +42,9 @@ async function main() {
   const email = args[1].toLowerCase().trim();
   const minutes = parseFloat(args[2]) || 100;
   const balance = minutes / 10; // $1 = 10 mins
+  const status = args[3] || (minutes <= 2 ? "demo" : "active");
 
-  console.log(`\n⚙️ Registering client "${name}" (${email}) with ${minutes} mins ($${balance})...`);
+  console.log(`\n⚙️ Registering client "${name}" (${email}) with ${minutes} mins ($${balance}) and status "${status}"...`);
 
   try {
     // Check if user already exists
@@ -55,6 +56,7 @@ async function main() {
       console.log(`\n💡 Info: User with email "${email}" already exists!`);
       console.log(`   Current Balance: $${user.walletAmount}`);
       console.log(`   Current Minutes: ${user.creditsMinutes}`);
+      console.log(`   Current Status:  ${user.status}`);
       
       // Update credits
       user = await prisma.user.update({
@@ -62,10 +64,11 @@ async function main() {
         data: {
           name,
           walletAmount: balance,
-          creditsMinutes: minutes
+          creditsMinutes: minutes,
+          status: status
         }
       });
-      console.log(`✨ Successfully updated user details and reset credits!`);
+      console.log(`✨ Successfully updated user details, reset credits, and updated status to "${status}"!`);
     } else {
       // Create new user
       user = await prisma.user.create({
@@ -75,10 +78,10 @@ async function main() {
           walletAmount: balance,
           creditsMinutes: minutes,
           role: "client",
-          status: "active"
+          status: status
         }
       });
-      console.log(`✨ Successfully created new client profile!`);
+      console.log(`✨ Successfully created new client profile with status "${status}"!`);
     }
 
     const localLink = `http://localhost:3000/?userId=${user.id}`;

@@ -45,6 +45,7 @@ export async function GET(req: Request) {
       email: user.email,
       balance: user.walletAmount,
       minutes: user.creditsMinutes,
+      status: user.status,
       history: payments.map(p => ({
         id: p.id,
         amount: p.amount,
