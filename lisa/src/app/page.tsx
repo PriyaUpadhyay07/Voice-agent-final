@@ -332,7 +332,7 @@ function DashboardContent() {
           }}>
             <span>⚠️</span>
             <span>
-              <strong>Demo Mode:</strong> Testing ke liye CSV/Google Sheet me sirf 1-2 leads rakhein. Campaign max 2 leads ko hi call karega. Zyada leads ke liye credits buy karein.
+              <strong>Demo Mode:</strong> For testing, please keep only 1-2 leads in your CSV/Google Sheet. The demo campaign will call a maximum of 2 leads. Buy credits for more leads.
             </span>
           </div>
         )}
