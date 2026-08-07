@@ -1,67 +1,65 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import PersonalizedDemoModal from "./PersonalizedDemoModal";
 
-export interface DemoSample {
+export interface VoiceModel {
   id: string;
-  title: string;
+  name: string;
   category: string;
-  duration: string;
-  speaker: string;
-  transcript: { time: string; speaker: string; text: string }[];
+  tagline: string;
+  description: string;
+  gradient: string;
+  sampleText: string;
 }
 
 export default function AudioDemo() {
-  const [activeSampleId, setActiveSampleId] = useState<string>("real-estate");
+  const [activeVoiceId, setActiveVoiceId] = useState<string>("conversational");
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [demoModalOpen, setDemoModalOpen] = useState<boolean>(false);
 
-  const samples: DemoSample[] = [
+  const voices: VoiceModel[] = [
+    {
+      id: "conversational",
+      name: "Lisa - Conversational Sales",
+      category: "Outbound Sales",
+      tagline: "Natural, engaging voice for cold lead qualification & appointment setting.",
+      description: "Handles interruptions and objection handling smoothly with sub-600ms latency.",
+      gradient: "radial-gradient(circle, #F59E0B 0%, #EF4444 60%, #881337 100%)",
+      sampleText: "Hi! This is Lisa calling on behalf of your sales team. I noticed you inquired about our growth services — do you have 1 minute for a quick chat?"
+    },
     {
       id: "real-estate",
-      title: "Real Estate Buyer Qualification",
+      name: "Maya - Real Estate Specialist",
       category: "Real Estate",
-      duration: "0:45",
-      speaker: "Lisa (AI Agent)",
-      transcript: [
-        { time: "0:02", speaker: "Lisa (AI)", text: "Hi! This is Lisa calling from Apex Realty. I noticed you recently inquired about modern 3-bedroom villas in Downtown. Is now a good time for a quick 1-minute chat?" },
-        { time: "0:12", speaker: "Lead (John)", text: "Oh hi Lisa, yes I was looking at that property. What's the asking price?" },
-        { time: "0:18", speaker: "Lisa (AI)", text: "Great question! The price starts at $450,000 with flexible payment plans. Are you looking to move in immediately, or investing for rental yield?" },
-        { time: "0:30", speaker: "Lead (John)", text: "Looking for rental investment mainly." },
-        { time: "0:35", speaker: "Lisa (AI)", text: "Perfect! I can schedule a quick 10-minute video tour with our senior investment advisor tomorrow at 3 PM or Friday at 11 AM. Which works best for you?" }
-      ]
+      tagline: "Polished & friendly tone for buyer qualification & property tour bookings.",
+      description: "Speaks naturally about property listings, pricing, and scheduling video walkthroughs.",
+      gradient: "radial-gradient(circle, #10B981 0%, #06B6D4 60%, #1E3A8A 100%)",
+      sampleText: "Hello! This is Maya from Apex Realty. I saw your request regarding modern 3-bedroom villas downtown. Are you looking to move in immediately or investing for yield?"
     },
     {
-      id: "saas-booking",
-      title: "B2B SaaS Demo Appointment Booking",
-      category: "Software / B2B",
-      duration: "0:38",
-      speaker: "Lisa (AI Agent)",
-      transcript: [
-        { time: "0:02", speaker: "Lisa (AI)", text: "Hello! I'm Lisa from CloudScale Systems. We help sales teams automate their lead follow-ups. Would you be open to seeing how we cut response times by 80%?" },
-        { time: "0:14", speaker: "Lead (Sarah)", text: "We already have a CRM system in place, so not really looking right now." },
-        { time: "0:22", speaker: "Lisa (AI)", text: "I completely understand Sarah! We actually integrate directly into HubSpot and Salesforce in under 5 minutes without replacing your CRM. Should I send a 2-minute video preview to your email?" },
-        { time: "0:32", speaker: "Lead (Sarah)", text: "Yeah, sure, send it over." }
-      ]
+      id: "lending",
+      name: "Alex - Business Loans & MCA",
+      category: "Lending & Finance",
+      tagline: "Professional, compliance-ready tone for commercial loan lead screening.",
+      description: "TCPA-compliant introduction, pre-screens monthly revenue, and checks funding urgency.",
+      gradient: "radial-gradient(circle, #8B5CF6 0%, #EC4899 60%, #4C1D95 100%)",
+      sampleText: "Good morning! This is Alex with Commercial Capital. We help small businesses secure fast working capital up to $250,000. How much funding are you looking for?"
     },
     {
-      id: "healthcare",
-      title: "Patient Appointment Confirmation",
-      category: "Healthcare",
-      duration: "0:32",
-      speaker: "Lisa (AI Agent)",
-      transcript: [
-        { time: "0:02", speaker: "Lisa (AI)", text: "Good morning! This is Lisa from Dental Care Center calling to confirm your appointment scheduled for tomorrow at 2:30 PM with Dr. Miller." },
-        { time: "0:12", speaker: "Lead (David)", text: "Ah thanks for calling! Can I reschedule to Thursday morning?" },
-        { time: "0:18", speaker: "Lisa (AI)", text: "Of course David! I have Thursday morning open at 9:15 AM or 10:45 AM. Which one fits your schedule better?" }
-      ]
+      id: "support",
+      name: "Sarah - Customer Support",
+      category: "Follow-Up & Support",
+      tagline: "Warm, empathetic voice for post-call feedback & appointment confirmation.",
+      description: "Reschedules missed appointments, confirms times, and gathers instant feedback.",
+      gradient: "radial-gradient(circle, #3B82F6 0%, #6366F1 60%, #1E1B4B 100%)",
+      sampleText: "Hi there! Sarah calling to confirm your appointment for tomorrow at 2:30 PM. Would you like me to keep this slot or adjust the timing for you?"
     }
   ];
 
-  const activeSample = samples.find(s => s.id === activeSampleId) || samples[0];
+  const activeVoice = voices.find(v => v.id === activeVoiceId) || voices[0];
 
-  // Speech synthesis fallback for audio demonstration
-  const handlePlayToggle = () => {
+  const handlePlayVoice = () => {
     if (typeof window === "undefined") return;
 
     if (isPlaying) {
@@ -71,333 +69,379 @@ export default function AudioDemo() {
     }
 
     setIsPlaying(true);
-    setCurrentTime(0);
-
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      const fullSpeech = activeSample.transcript.map(t => `${t.speaker}: ${t.text}`).join(". ");
-      const utterance = new SpeechSynthesisUtterance(fullSpeech);
+      const utterance = new SpeechSynthesisUtterance(activeVoice.sampleText);
       utterance.rate = 1.0;
       utterance.pitch = 1.05;
-      
-      utterance.onend = () => {
-        setIsPlaying(false);
-        setCurrentTime(0);
-      };
-      
-      utterance.onerror = () => {
-        setIsPlaying(false);
-      };
-
+      utterance.onend = () => setIsPlaying(false);
+      utterance.onerror = () => setIsPlaying(false);
       window.speechSynthesis.speak(utterance);
     } else {
-      setTimeout(() => {
-        setIsPlaying(false);
-      }, 5000);
+      setTimeout(() => setIsPlaying(false), 4000);
     }
   };
 
   return (
-    <section id="audio-demo" className="audio-demo-section">
+    <section id="voices" className="voices-section">
       <div className="container">
+        {/* ElevenLabs Style Title & Header */}
         <div className="section-header">
-          <span className="badge">
-            <span className="badge-dot"></span> Interactive Audio Samples
-          </span>
-          <h2 className="section-title">
-            Listen to <span className="gradient-text">Lisa AI Cold Calls</span>
-          </h2>
+          <div className="badge-pill badge-lime">
+            <span>🎙️ AI Voice Generator & Models</span>
+          </div>
+          <h2 className="section-title font-serif">Bringing Technology to Life</h2>
           <p className="section-subtitle">
-            Experience ultra-realistic human pitch, natural pauses, and instant objection handling in action.
+            Experience ultra-realistic voice models tailored for conversational sales, lending outreach, and real estate.
           </p>
+          <div className="header-cta-wrap">
+            <button className="btn-primary" onClick={() => setDemoModalOpen(true)}>
+              📞 Book a Personalised Demo Call
+            </button>
+          </div>
         </div>
 
-        <div className="audio-demo-wrapper glass-card">
-          {/* Sample Category Tabs */}
-          <div className="sample-tabs">
-            {samples.map(sample => (
+        {/* ElevenLabs Style Main Box */}
+        <div className="soft-card voices-card">
+          {/* Top Voice Category Tabs */}
+          <div className="voice-tabs">
+            {voices.map((v) => (
               <button
-                key={sample.id}
-                className={`sample-tab ${activeSampleId === sample.id ? "active" : ""}`}
+                key={v.id}
+                className={`voice-tab ${activeVoiceId === v.id ? "active" : ""}`}
                 onClick={() => {
-                  if (isPlaying) window.speechSynthesis?.cancel();
+                  if (isPlaying && typeof window !== "undefined") window.speechSynthesis?.cancel();
                   setIsPlaying(false);
-                  setActiveSampleId(sample.id);
+                  setActiveVoiceId(v.id);
                 }}
-                id={`sample-tab-${sample.id}`}
               >
-                <span className="tab-category">{sample.category}</span>
-                <span className="tab-title">{sample.title}</span>
+                <span className="tab-dot" style={{ background: v.gradient }}></span>
+                {v.name.split("-")[0]}
               </button>
             ))}
           </div>
 
-          {/* Player Main Area */}
-          <div className="player-main">
-            <div className="player-header">
-              <div className="player-info">
-                <span className="playing-badge">{activeSample.category}</span>
-                <h3 className="sample-name">{activeSample.title}</h3>
-                <span className="speaker-name">🎙️ Agent: {activeSample.speaker}</span>
-              </div>
-
-              {/* Play Button */}
-              <button 
-                className="play-btn"
-                onClick={handlePlayToggle}
-                id="btn-play-audio-sample"
-              >
-                {isPlaying ? "⏸️ Pause" : "▶️ Listen Audio Demo"}
-              </button>
-            </div>
-
-            {/* Waveform Visualization */}
-            <div className="waveform-container">
-              <div className={`wave-bars ${isPlaying ? "playing" : ""}`}>
-                {Array.from({ length: 32 }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className="wave-bar" 
-                    style={{ 
-                      animationDelay: `${(i % 5) * 0.2}s`,
-                      height: isPlaying ? `${Math.floor(Math.random() * 35) + 10}px` : "12px"
-                    }} 
-                  />
-                ))}
-              </div>
-              <span className="duration-label">{isPlaying ? "Live Audio Playing..." : `Duration: ${activeSample.duration}`}</span>
-            </div>
-
-            {/* Live Transcript View */}
-            <div className="transcript-box">
-              <h4 className="transcript-heading">💬 Call Transcript</h4>
-              <div className="transcript-list">
-                {activeSample.transcript.map((line, idx) => (
-                  <div 
-                    key={idx} 
-                    className={`transcript-item ${line.speaker.includes("AI") ? "ai-speaker" : "lead-speaker"}`}
+          {/* Main Visualizer Stage (Image 3 inspired) */}
+          <div className="voice-stage">
+            <div className="spheres-row">
+              {voices.map((v) => {
+                const isActive = v.id === activeVoiceId;
+                return (
+                  <div
+                    key={v.id}
+                    className={`sphere-wrapper ${isActive ? "active-sphere" : ""}`}
+                    onClick={() => {
+                      if (isPlaying && typeof window !== "undefined") window.speechSynthesis?.cancel();
+                      setIsPlaying(false);
+                      setActiveVoiceId(v.id);
+                    }}
                   >
-                    <span className="timestamp">{line.time}</span>
-                    <div className="msg-content">
-                      <strong className="speaker-label">{line.speaker}:</strong>
-                      <p className="speaker-text">{line.text}</p>
+                    <div 
+                      className={`voice-sphere ${isActive && isPlaying ? "pulsing-sphere" : ""}`}
+                      style={{ background: v.gradient }}
+                    >
+                      {isActive && (
+                        <button className="play-icon-btn" onClick={handlePlayVoice}>
+                          {isPlaying ? "⏸" : "▶"}
+                        </button>
+                      )}
                     </div>
+                    <span className="sphere-label">{v.category}</span>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+
+            {/* Voice Details & Live Preview Box */}
+            <div className="voice-details-box">
+              <div className="voice-meta">
+                <span className="voice-cat-badge">{activeVoice.category}</span>
+                <h3 className="voice-name font-serif">{activeVoice.name}</h3>
+                <p className="voice-tagline">{activeVoice.tagline}</p>
               </div>
+
+              <div className="sample-text-box">
+                <p className="sample-label">🎙️ Live AI Voice Script Preview:</p>
+                <p className="sample-quote">&ldquo;{activeVoice.sampleText}&rdquo;</p>
+              </div>
+
+              <div className="voice-actions">
+                <button className="btn-lime" onClick={handlePlayVoice}>
+                  {isPlaying ? "⏸️ Pause Voice Audio" : "▶️ Listen Voice Sample"}
+                </button>
+                <button className="btn-secondary" onClick={() => setDemoModalOpen(true)}>
+                  📞 Book Demo Call For Your Business
+                </button>
+              </div>
+            </div>
+
+            {/* Bottom Feature Tags (Image 3 style) */}
+            <div className="feature-tags-row">
+              <span className="ft-tag active-tag">AI Voice Generator</span>
+              <span className="ft-tag">Text to Speech</span>
+              <span className="ft-tag">TCPA Compliance</span>
+              <span className="ft-tag">Google Sheets Sync</span>
+              <span className="ft-tag">Voice Cloning</span>
+              <span className="ft-tag">Call Recordings</span>
             </div>
           </div>
         </div>
       </div>
 
+      {demoModalOpen && <PersonalizedDemoModal onClose={() => setDemoModalOpen(false)} />}
+
       <style jsx>{`
-        .audio-demo-section {
-          padding: 80px 0;
+        .voices-section {
+          padding: 90px 0;
+          background: #FDFCFC;
         }
 
-        .audio-demo-wrapper {
-          display: grid;
-          grid-template-columns: 300px 1fr;
-          overflow: hidden;
-          padding: 0;
+        .section-header {
+          text-align: center;
+          max-width: 720px;
+          margin: 0 auto 50px auto;
         }
 
-        .sample-tabs {
-          background: rgba(0, 0, 0, 0.3);
-          border-right: 1px solid var(--border-color);
+        .section-title {
+          font-size: 3.5rem;
+          color: #0F172A;
+          margin: 16px 0 12px 0;
+          line-height: 1.1;
+        }
+
+        .section-subtitle {
+          color: #475569;
+          font-size: 1.1rem;
+          margin-bottom: 24px;
+        }
+
+        .header-cta-wrap {
           display: flex;
-          flex-direction: column;
+          justify-content: center;
         }
 
-        .sample-tab {
-          padding: 20px;
-          text-align: left;
-          background: none;
-          border: none;
-          border-bottom: 1px solid var(--border-color);
-          color: var(--text-muted);
+        .voices-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 32px;
+          padding: 36px;
+          box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+        }
+
+        .voice-tabs {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          border-bottom: 1px solid #F1F5F9;
+          padding-bottom: 20px;
+          margin-bottom: 36px;
+          flex-wrap: wrap;
+        }
+
+        .voice-tab {
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 9999px;
+          padding: 8px 20px;
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: #475569;
           cursor: pointer;
           transition: all 0.2s ease;
           display: flex;
-          flex-direction: column;
-          gap: 6px;
+          align-items: center;
+          gap: 8px;
         }
 
-        .sample-tab:hover {
-          background: rgba(255, 255, 255, 0.03);
-          color: var(--text-main);
+        .voice-tab:hover {
+          border-color: #0F172A;
+          color: #0F172A;
         }
 
-        .sample-tab.active {
-          background: rgba(139, 92, 246, 0.12);
-          border-left: 4px solid var(--primary);
-          color: #fff;
+        .voice-tab.active {
+          background: #0F172A;
+          color: #FFFFFF;
+          border-color: #0F172A;
         }
 
-        .tab-category {
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--primary-light);
-          font-weight: 700;
+        .tab-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
         }
 
-        .tab-title {
-          font-family: var(--font-heading);
-          font-size: 0.95rem;
-          font-weight: 600;
-        }
-
-        .player-main {
-          padding: 32px;
+        .voice-stage {
           display: flex;
           flex-direction: column;
-          gap: 24px;
+          align-items: center;
+          gap: 40px;
         }
 
-        .player-header {
+        .spheres-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 20px;
+          justify-content: center;
+          gap: 40px;
+          flex-wrap: wrap;
         }
 
-        .playing-badge {
-          display: inline-block;
-          font-size: 0.75rem;
-          background: rgba(236, 72, 153, 0.15);
-          color: var(--secondary);
-          padding: 4px 10px;
-          border-radius: var(--radius-full);
-          font-weight: 700;
-          margin-bottom: 8px;
-        }
-
-        .sample-name {
-          font-size: 1.4rem;
-          font-weight: 700;
-          color: #fff;
-        }
-
-        .speaker-name {
-          font-size: 0.88rem;
-          color: var(--text-muted);
-        }
-
-        .play-btn {
-          background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-          color: #fff;
-          font-family: var(--font-heading);
-          font-weight: 700;
-          padding: 14px 28px;
-          border-radius: var(--radius-full);
-          border: none;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: var(--shadow-glow);
-          white-space: nowrap;
-        }
-
-        .play-btn:hover {
-          transform: scale(1.05);
-        }
-
-        .waveform-container {
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 20px;
-        }
-
-        .wave-bars {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          height: 45px;
-          flex: 1;
-        }
-
-        .duration-label {
-          font-size: 0.85rem;
-          color: var(--text-muted);
-          font-family: monospace;
-        }
-
-        .transcript-box {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          padding: 20px;
-        }
-
-        .transcript-heading {
-          font-size: 1rem;
-          color: var(--text-main);
-          margin-bottom: 16px;
-        }
-
-        .transcript-list {
+        .sphere-wrapper {
           display: flex;
           flex-direction: column;
-          gap: 14px;
-          max-height: 240px;
-          overflow-y: auto;
-        }
-
-        .transcript-item {
-          display: flex;
+          align-items: center;
           gap: 12px;
-          font-size: 0.9rem;
-          padding: 10px;
-          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: transform 0.3s ease;
         }
 
-        .transcript-item.ai-speaker {
-          background: rgba(139, 92, 246, 0.08);
-          border-left: 3px solid var(--primary);
+        .sphere-wrapper:hover {
+          transform: translateY(-6px);
         }
 
-        .transcript-item.lead-speaker {
-          background: rgba(255, 255, 255, 0.03);
-          border-left: 3px solid var(--accent-cyan);
+        .voice-sphere {
+          width: 110px;
+          height: 110px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+          position: relative;
+          transition: all 0.3s ease;
         }
 
-        .timestamp {
-          font-family: monospace;
-          color: var(--text-dim);
-          font-size: 0.8rem;
+        .active-sphere .voice-sphere {
+          transform: scale(1.15);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.25);
         }
 
-        .msg-content {
+        .pulsing-sphere {
+          animation: pulse-glow 1.5s infinite ease-in-out alternate;
+        }
+
+        @keyframes pulse-glow {
+          0% { transform: scale(1.15); }
+          100% { transform: scale(1.25); }
+        }
+
+        .play-icon-btn {
+          background: rgba(255, 255, 255, 0.9);
+          border: none;
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          font-size: 1.2rem;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .sphere-label {
+          font-size: 0.82rem;
+          color: #64748B;
+          font-weight: 500;
+        }
+
+        .voice-details-box {
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 24px;
+          padding: 32px;
+          max-width: 800px;
+          width: 100%;
           display: flex;
           flex-direction: column;
+          gap: 20px;
+          text-align: center;
         }
 
-        .speaker-label {
-          color: var(--text-main);
-          font-size: 0.85rem;
+        .voice-cat-badge {
+          background: #C4F135;
+          color: #0F172A;
+          font-size: 0.78rem;
+          font-weight: 700;
+          padding: 4px 14px;
+          border-radius: 9999px;
+          display: inline-block;
         }
 
-        .speaker-text {
-          color: var(--text-muted);
+        .voice-name {
+          font-size: 2.2rem;
+          color: #0F172A;
+          margin: 6px 0 2px 0;
         }
 
-        @media (max-width: 850px) {
-          .audio-demo-wrapper {
-            grid-template-columns: 1fr;
-          }
-          .sample-tabs {
-            flex-direction: row;
-            overflow-x: auto;
-          }
-          .player-header {
-            flex-direction: column;
-            align-items: flex-start;
-          }
+        .voice-tagline {
+          color: #475569;
+          font-size: 0.98rem;
+        }
+
+        .sample-text-box {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 16px;
+          padding: 20px;
+          text-align: left;
+        }
+
+        .sample-label {
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #64748B;
+          margin-bottom: 6px;
+          text-transform: uppercase;
+        }
+
+        .sample-quote {
+          font-size: 1rem;
+          color: #0F172A;
+          font-style: italic;
+          line-height: 1.6;
+        }
+
+        .voice-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .feature-tags-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 10px;
+        }
+
+        .ft-tag {
+          background: #F1F5F9;
+          border: 1px solid #E2E8F0;
+          color: #64748B;
+          font-size: 0.82rem;
+          padding: 6px 16px;
+          border-radius: 9999px;
+          font-weight: 500;
+        }
+
+        .active-tag {
+          background: #0F172A;
+          color: #FFFFFF;
+          border-color: #0F172A;
+        }
+
+        @media (max-width: 768px) {
+          .section-title { font-size: 2.5rem; }
+          .voices-card { padding: 20px; }
+          .spheres-row { gap: 20px; }
+          .voice-sphere { width: 85px; height: 85px; }
+          .voice-name { font-size: 1.8rem; }
         }
       `}</style>
     </section>

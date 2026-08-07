@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import FeedbackModal from "./FeedbackModal";
-import TryDemoModal from "./TryDemoModal";
+import PersonalizedDemoModal from "./PersonalizedDemoModal";
 
 export default function Navbar() {
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -18,36 +16,32 @@ export default function Navbar() {
           <Link href="/" className="logo-brand">
             <div className="logo-icon">✨</div>
             <div className="logo-text">
-              <span className="logo-title">LISA<span className="logo-accent">.AI</span></span>
-              <span className="logo-subtitle">Live Web & About</span>
+              <span className="logo-title font-serif">LISA AI</span>
+              <span className="logo-subtitle">Autonomous Outbound Agent</span>
             </div>
           </Link>
 
           {/* Nav Links */}
           <nav className={`nav-links ${mobileMenuOpen ? "active" : ""}`}>
             <Link href="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
-            <Link href="/about" onClick={() => setMobileMenuOpen(false)}>About Us</Link>
-            <Link href="/#audio-demo" onClick={() => setMobileMenuOpen(false)}>Audio Demo</Link>
-            <Link href="/#video-walkthrough" onClick={() => setMobileMenuOpen(false)}>Walkthrough Video</Link>
-            <Link href="/#pdf-brochure" onClick={() => setMobileMenuOpen(false)}>PDF Overview</Link>
+            <Link href="/#why-us" onClick={() => setMobileMenuOpen(false)}>Why Choose Us</Link>
+            <Link href="/#voices" onClick={() => setMobileMenuOpen(false)}>Voices</Link>
+            <Link href="/#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</Link>
+            <Link href="/terms" onClick={() => setMobileMenuOpen(false)}>Terms & Conditions</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
           </nav>
 
           {/* Action Buttons */}
           <div className="nav-actions">
+            <Link href="/contact" className="btn-secondary btn-sm nav-hide-mobile">
+              Contact Us
+            </Link>
             <button 
-              className="btn-secondary btn-sm"
-              onClick={() => setFeedbackOpen(true)}
-              id="btn-nav-feedback"
-            >
-              💬 Feedback
-            </button>
-            <button 
-              className="btn-primary btn-sm"
+              className="btn-lime btn-sm"
               onClick={() => setDemoOpen(true)}
               id="btn-nav-demo"
             >
-              ⚡ Try Demo
+              📞 Book Personalised Demo
             </button>
 
             {/* Mobile Hamburger Toggle */}
@@ -62,20 +56,19 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* Modals */}
-      {feedbackOpen && <FeedbackModal onClose={() => setFeedbackOpen(false)} />}
-      {demoOpen && <TryDemoModal onClose={() => setDemoOpen(false)} />}
+      {/* Demo Modal */}
+      {demoOpen && <PersonalizedDemoModal onClose={() => setDemoOpen(false)} />}
 
       <style jsx>{`
         .navbar-container {
           position: sticky;
           top: 0;
           z-index: 100;
-          background: rgba(7, 9, 14, 0.85);
+          background: rgba(253, 253, 252, 0.92);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          padding: 16px 0;
+          border-bottom: 1px solid #E2E8F0;
+          padding: 14px 0;
         }
 
         .nav-content {
@@ -87,20 +80,20 @@ export default function Navbar() {
         .logo-brand {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           text-decoration: none;
         }
 
         .logo-icon {
-          width: 40px;
-          height: 40px;
+          width: 38px;
+          height: 38px;
           border-radius: 12px;
-          background: linear-gradient(135deg, #8b5cf6, #ec4899);
+          background: #0F172A;
+          color: #C4F135;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 1.2rem;
-          box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+          font-size: 1.1rem;
         }
 
         .logo-text {
@@ -109,20 +102,19 @@ export default function Navbar() {
         }
 
         .logo-title {
-          font-family: var(--font-heading);
-          font-size: 1.4rem;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: 0.05em;
-        }
-
-        .logo-accent {
-          color: #ec4899;
+          font-size: 1.6rem;
+          font-style: italic;
+          font-weight: 600;
+          color: #0F172A;
+          line-height: 1;
+          letter-spacing: -0.02em;
         }
 
         .logo-subtitle {
-          font-size: 0.72rem;
-          color: var(--text-muted);
+          font-size: 0.7rem;
+          color: #64748B;
+          font-family: var(--font-body);
+          font-weight: 500;
           letter-spacing: 0.02em;
         }
 
@@ -133,15 +125,16 @@ export default function Navbar() {
         }
 
         .nav-links :global(a) {
-          color: var(--text-muted);
-          font-family: var(--font-heading);
-          font-size: 0.95rem;
+          color: #475569;
+          font-family: var(--font-body);
+          font-size: 0.9rem;
           font-weight: 500;
           transition: all 0.2s ease;
+          text-decoration: none;
         }
 
         .nav-links :global(a:hover) {
-          color: var(--primary-light);
+          color: #0F172A;
         }
 
         .nav-actions {
@@ -154,10 +147,15 @@ export default function Navbar() {
           display: none;
           background: none;
           border: none;
-          color: #fff;
+          color: #0F172A;
           font-size: 1.5rem;
           cursor: pointer;
           padding: 4px;
+        }
+
+        .btn-sm {
+          padding: 8px 18px;
+          font-size: 0.85rem;
         }
 
         @media (max-width: 900px) {
@@ -167,15 +165,20 @@ export default function Navbar() {
             top: 100%;
             left: 0;
             right: 0;
-            background: rgba(18, 22, 34, 0.98);
-            border-bottom: 1px solid var(--border-color);
+            background: #FFFFFF;
+            border-bottom: 1px solid #E2E8F0;
             flex-direction: column;
             padding: 24px;
-            gap: 20px;
+            gap: 18px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
           }
 
           .nav-links.active {
             display: flex;
+          }
+
+          .nav-hide-mobile {
+            display: none;
           }
 
           .mobile-toggle {

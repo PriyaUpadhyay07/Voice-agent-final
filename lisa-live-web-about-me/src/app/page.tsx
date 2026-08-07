@@ -2,194 +2,155 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import WhyChooseUsSection from "@/components/WhyChooseUsSection";
 import AudioDemo from "@/components/AudioDemo";
-import VideoWalkthrough from "@/components/VideoWalkthrough";
-import PdfViewerModal from "@/components/PdfViewerModal";
-import SocialLinks from "@/components/SocialLinks";
-import TryDemoModal from "@/components/TryDemoModal";
-import FeedbackModal from "@/components/FeedbackModal";
+import FaqSection from "@/components/FaqSection";
+import PersonalizedDemoModal from "@/components/PersonalizedDemoModal";
 
 export default function Home() {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
-  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
   return (
     <div className="home-page">
       {/* HERO SECTION */}
       <section className="hero-section">
         <div className="container hero-container">
-          <div className="hero-badge badge animate-float">
-            <span className="badge-dot"></span> ⚡ Sub-100ms Ultra-Fast Voice AI Agent
+          <div className="hero-badge badge-pill badge-lime animate-float">
+            <span>⚡ Autonomous Outbound Calling Agent</span>
           </div>
 
-          <h1 className="hero-title">
-            Supercharge Cold Calling With <br />
-            <span className="gradient-text">Human-Like AI Agents</span>
+          <h1 className="hero-title font-serif">
+            LISA AI
           </h1>
 
-          <p className="hero-subtitle">
-            Lisa AI places outbound calls, handles tough objections, qualifies leads, and books appointments directly to your Google Calendar 24/7.
-          </p>
+          <div className="hero-sub-block">
+            <h2 className="sub-tag font-serif">Lisa AI</h2>
+            <p className="sub-text">
+              You bring the leads and the script — AI handles everything else by itself.
+            </p>
+          </div>
 
           <div className="hero-actions">
-            <button 
-              className="btn-primary"
-              onClick={() => setDemoModalOpen(true)}
-              id="btn-hero-try-demo"
-            >
-              ⚡ Try Live Voice Demo
-            </button>
-            <a href="#video-walkthrough" className="btn-secondary">
-              📹 Watch Walkthrough Video
+            <Link href="/contact" className="btn-primary">
+              📩 Contact Us
+            </Link>
+            <a href="#why-us" className="btn-secondary">
+              ✨ Why Choose Us
             </a>
+            <button 
+              className="btn-lime"
+              onClick={() => setDemoModalOpen(true)}
+              id="btn-hero-personalised-demo"
+            >
+              📞 Book Personalised Demo
+            </button>
           </div>
 
-          {/* Social Links Bar */}
-          <div className="hero-socials">
-            <span className="socials-label">Connect & Follow Us:</span>
-            <SocialLinks variant="horizontal" />
-          </div>
-
-          {/* Key Metrics Grid */}
-          <div className="hero-metrics-grid">
-            <div className="metric-card glass-card">
-              <span className="metric-val gradient-text">10,000+</span>
-              <span className="metric-lbl">Outbound Calls Automated</span>
+          {/* Quick Stats Grid */}
+          <div className="hero-stats-grid">
+            <div className="stat-card soft-card">
+              <span className="stat-num font-serif">24 Hours</span>
+              <span className="stat-lbl">Full Agent Setup Time</span>
             </div>
-            <div className="metric-card glass-card">
-              <span className="metric-val gradient-text-cyan">99.2%</span>
-              <span className="metric-lbl">Human Pitch Accuracy</span>
+            <div className="stat-card soft-card">
+              <span className="stat-num font-serif">100% 24/7</span>
+              <span className="stat-lbl">Non-stop Outbound Calls</span>
             </div>
-            <div className="metric-card glass-card">
-              <span className="metric-val gradient-text">&lt; 100ms</span>
-              <span className="metric-lbl">Real-Time Voice Latency</span>
+            <div className="stat-card soft-card">
+              <span className="stat-num font-serif">$1,000</span>
+              <span className="stat-lbl">Setup (Includes 80 Free Mins)</span>
             </div>
-            <div className="metric-card glass-card">
-              <span className="metric-val gradient-text-cyan">85%</span>
-              <span className="metric-lbl">Cost Saved Per Lead</span>
+            <div className="stat-card soft-card">
+              <span className="stat-num font-serif">$0.25</span>
+              <span className="stat-lbl">Pay-As-You-Go per Minute</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* AUDIO DEMO FEATURE (#6) */}
+      {/* WHY CHOOSE US & WHY WE'RE DIFFERENT SECTION */}
+      <WhyChooseUsSection />
+
+      {/* ELEVENLABS STYLE VOICE DEMO SECTION */}
       <AudioDemo />
 
-      {/* WALKTHROUGH VIDEO FEATURE (#8) */}
-      <VideoWalkthrough />
+      {/* COMPREHENSIVE FAQ SECTION */}
+      <FaqSection />
 
-      {/* WORKING PDF FEATURE (#7) */}
-      <PdfViewerModal />
-
-      {/* ABOUT US FEATURE SNIPPET (#1) */}
-      <section className="about-snippet-section">
+      {/* FINAL CONTACT CTA SECTION */}
+      <section className="final-cta-section">
         <div className="container">
-          <div className="about-card glass-card">
-            <div className="about-content">
-              <span className="badge">
-                <span className="badge-dot"></span> About Lisa AI
-              </span>
-              <h2 className="about-heading">
-                Reinventing Cold Outreach for <span className="gradient-text">Modern Sales Teams</span>
-              </h2>
-              <p className="about-text">
-                Lisa AI was engineered to eliminate the manual grind of outbound cold calling. By integrating deep speech neural models with Vapi, SignalWire, and Supabase RLS multi-tenant security, Lisa delivers high-converting conversations at scale.
-              </p>
-              <div className="about-actions">
-                <Link href="/about" className="btn-primary">
-                  📖 Read Full About Us Story
-                </Link>
-                <button 
-                  className="btn-secondary"
-                  onClick={() => setFeedbackModalOpen(true)}
-                >
-                  💬 Give Product Feedback
-                </button>
-              </div>
+          <div className="soft-card cta-box text-center">
+            <div className="badge-pill badge-lime">
+              <span>🚀 Ready to Automate Your Calls?</span>
             </div>
-
-            <div className="about-visual">
-              <div className="visual-box glass-card">
-                <span className="visual-icon">🚀</span>
-                <h4 className="visual-title">100% Automated Workflow</h4>
-                <p className="visual-desc">From CSV upload to calendar slot booked—zero human intervention needed.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SOCIAL LINKS PILLS FEATURE (#5) */}
-      <section className="socials-feature-section">
-        <div className="container">
-          <div className="section-header">
-            <span className="badge">
-              <span className="badge-dot"></span> Community & Channels
-            </span>
-            <h2 className="section-title">
-              Join the <span className="gradient-text">Lisa AI Community</span>
-            </h2>
-            <p className="section-subtitle">
-              Follow our official channels for live product updates, tutorial videos, and voice AI benchmarks.
-            </p>
-          </div>
-          <SocialLinks variant="pills" />
-        </div>
-      </section>
-
-      {/* CONTACT US FEATURE SNIPPET (#2) */}
-      <section className="contact-snippet-section">
-        <div className="container text-center">
-          <div className="cta-box glass-card">
-            <span className="badge">
-              <span className="badge-dot"></span> Ready to Scale?
-            </span>
-            <h2 className="cta-title">Start Your AI Voice Journey Today</h2>
+            <h2 className="cta-heading font-serif">Let Lisa AI Handle Your Outbound Calls</h2>
             <p className="cta-desc">
-              Have custom enterprise requirements or need a tailored voice agent script? Talk to our voice automation architects.
+              Setup is completed within 24 hours by founder <strong>Priya Upadhyay</strong>. Just fill out our simple onboarding form, and we handle everything else.
             </p>
-            <div className="cta-buttons">
+            <div className="cta-btn-group">
               <Link href="/contact" className="btn-primary">
-                📩 Contact Us Now
+                📩 Contact Priya (priya@callwithlisa.in)
               </Link>
-              <button className="btn-secondary" onClick={() => setDemoModalOpen(true)}>
-                ⚡ Try Interactive Demo
+              <button className="btn-lime" onClick={() => setDemoModalOpen(true)}>
+                📞 Book Personalised Demo Call
               </button>
+              <Link href="/terms" className="btn-secondary">
+                ⚖️ View Terms & Conditions
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Modals */}
-      {demoModalOpen && <TryDemoModal onClose={() => setDemoModalOpen(false)} />}
-      {feedbackModalOpen && <FeedbackModal onClose={() => setFeedbackModalOpen(false)} />}
+      {/* DEMO MODAL */}
+      {demoModalOpen && <PersonalizedDemoModal onClose={() => setDemoModalOpen(false)} />}
 
       <style jsx>{`
+        .home-page {
+          background: #FDFCFC;
+        }
+
         .hero-section {
-          padding: 100px 0 60px 0;
+          padding: 90px 0 60px 0;
           text-align: center;
-          position: relative;
         }
 
         .hero-container {
           display: flex;
           flex-direction: column;
           align-items: center;
+          max-width: 900px;
         }
 
         .hero-title {
-          font-size: 3.8rem;
-          font-weight: 800;
+          font-size: 5.5rem;
+          font-weight: 400;
+          color: #0F172A;
           letter-spacing: -0.03em;
-          margin-bottom: 20px;
-          line-height: 1.15;
+          margin: 20px 0 10px 0;
+          line-height: 1;
         }
 
-        .hero-subtitle {
-          font-size: 1.25rem;
-          color: var(--text-muted);
-          max-width: 720px;
+        .hero-sub-block {
           margin-bottom: 36px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .sub-tag {
+          font-size: 2.2rem;
+          color: #0F172A;
+          font-style: italic;
+        }
+
+        .sub-text {
+          font-size: 1.25rem;
+          color: #475569;
+          max-width: 680px;
+          line-height: 1.5;
         }
 
         .hero-actions {
@@ -197,151 +158,76 @@ export default function Home() {
           gap: 16px;
           flex-wrap: wrap;
           justify-content: center;
-          margin-bottom: 40px;
+          margin-bottom: 50px;
         }
 
-        .hero-socials {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          margin-bottom: 60px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid var(--border-color);
-          padding: 8px 24px;
-          border-radius: var(--radius-full);
-        }
-
-        .socials-label {
-          font-size: 0.85rem;
-          color: var(--text-muted);
-          font-weight: 600;
-        }
-
-        .hero-metrics-grid {
+        .hero-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
           gap: 20px;
           width: 100%;
         }
 
-        .metric-card {
-          padding: 24px;
+        .stat-card {
+          padding: 24px 16px;
+          background: #FFFFFF;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 8px;
+          gap: 4px;
         }
 
-        .metric-val {
-          font-family: var(--font-heading);
+        .stat-num {
           font-size: 2.2rem;
-          font-weight: 800;
+          color: #0F172A;
         }
 
-        .metric-lbl {
-          font-size: 0.85rem;
-          color: var(--text-muted);
+        .stat-lbl {
+          font-size: 0.82rem;
+          color: #64748B;
+          font-family: var(--font-body);
         }
 
-        .about-snippet-section {
-          padding: 60px 0;
-        }
-
-        .about-card {
-          display: grid;
-          grid-template-columns: 1.4fr 1fr;
-          gap: 40px;
-          padding: 48px;
-          align-items: center;
-        }
-
-        .about-heading {
-          font-size: 2.4rem;
-          font-weight: 800;
-          margin: 12px 0 16px 0;
-        }
-
-        .about-text {
-          color: var(--text-muted);
-          font-size: 1.05rem;
-          line-height: 1.7;
-          margin-bottom: 28px;
-        }
-
-        .about-actions {
-          display: flex;
-          gap: 16px;
-          flex-wrap: wrap;
-        }
-
-        .visual-box {
-          padding: 40px;
-          text-align: center;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .visual-icon {
-          font-size: 3.5rem;
-        }
-
-        .visual-title {
-          font-size: 1.3rem;
-          color: #fff;
-        }
-
-        .visual-desc {
-          color: var(--text-muted);
-          font-size: 0.9rem;
-        }
-
-        .socials-feature-section {
+        .final-cta-section {
           padding: 80px 0;
         }
 
-        .contact-snippet-section {
-          padding: 60px 0;
-        }
-
         .cta-box {
-          padding: 60px 24px;
+          padding: 60px 40px;
+          background: #FFFFFF;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 16px;
-          max-width: 800px;
-          margin: 0 auto;
+          gap: 20px;
+          border-radius: 32px;
         }
 
-        .cta-title {
-          font-size: 2.5rem;
-          font-weight: 800;
+        .cta-heading {
+          font-size: 3.2rem;
+          color: #0F172A;
+          line-height: 1.1;
         }
 
         .cta-desc {
-          color: var(--text-muted);
+          color: #475569;
           font-size: 1.1rem;
-          max-width: 600px;
+          max-width: 640px;
+          line-height: 1.6;
         }
 
-        .cta-buttons {
+        .cta-btn-group {
           display: flex;
           gap: 16px;
-          margin-top: 12px;
+          flex-wrap: wrap;
+          justify-content: center;
+          margin-top: 10px;
         }
 
         @media (max-width: 900px) {
-          .hero-title {
-            font-size: 2.6rem;
-          }
-          .hero-metrics-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .about-card {
-            grid-template-columns: 1fr;
-          }
+          .hero-title { font-size: 3.8rem; }
+          .sub-text { font-size: 1.1rem; }
+          .hero-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .cta-heading { font-size: 2.4rem; }
         }
       `}</style>
     </div>
