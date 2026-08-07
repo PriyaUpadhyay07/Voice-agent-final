@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { PhoneCall, Phone, AlertTriangle, Mail, Sparkles, X, Loader2, CheckCircle2 } from "lucide-react";
 
 interface PersonalizedDemoModalProps {
   onClose: () => void;
@@ -14,16 +15,15 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
   const [callState, setCallState] = useState<"idle" | "dialing" | "connected" | "limit_reached">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [transcriptLines, setTranscriptLines] = useState<string[]>([]);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isCallingApi, setIsCallingApi] = useState(false);
 
-  // Check if number has already used the demo call
   const checkCallLimit = (num: string) => {
     if (typeof window === "undefined") return false;
     const usedNumbers = JSON.parse(localStorage.getItem("lisa_demo_called_numbers") || "[]");
     return usedNumbers.includes(num.trim());
   };
 
-  const handleStartCall = (e: React.FormEvent) => {
+  const handleStartCall = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || phone.trim().length < 8) {
       setErrorMessage("Please enter a valid phone number with area code.");
@@ -36,45 +36,57 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
     }
 
     setErrorMessage("");
+    setIsCallingApi(true);
     setCallState("dialing");
 
-    // Simulate dialing -> connecting flow
+    try {
+      // Trigger backend API call to outbound telephony provider
+      const res = await fetch("/api/demo-call", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, phone, businessName, businessDesc }),
+      });
+
+      const data = await res.json();
+      console.log("Demo call response:", data);
+    } catch (err) {
+      console.error("Call trigger error:", err);
+    } finally {
+      setIsCallingApi(false);
+    }
+
+    // Save number in localStorage to enforce 1 demo call per number limit
+    const usedNumbers = JSON.parse(localStorage.getItem("lisa_demo_called_numbers") || "[]");
+    usedNumbers.push(phone.trim());
+    localStorage.setItem("lisa_demo_called_numbers", JSON.stringify(usedNumbers));
+
+    // Show live connected state with real-time audio playback
     setTimeout(() => {
       setCallState("connected");
 
-      // Save number to localStorage to enforce 1-call limit
-      const usedNumbers = JSON.parse(localStorage.getItem("lisa_demo_called_numbers") || "[]");
-      usedNumbers.push(phone.trim());
-      localStorage.setItem("lisa_demo_called_numbers", JSON.stringify(usedNumbers));
-
-      // Build custom speech script based on business details
       const bName = businessName.trim() || "your business";
-      const bDesc = businessDesc.trim() || "your products and special offers";
+      const bDesc = businessDesc.trim() || "your products and offers";
       const userName = name.trim() || "there";
 
       const dialogue = [
-        `Ring... Ring... Call Connected!`,
-        `Lisa AI: "Hi ${userName}! This is Lisa AI calling on behalf of ${bName}."`,
-        `Lisa AI: "I was looking over your business details — ${bDesc}."`,
-        `Lisa AI: "Our autonomous system handles all lead qualification, answers customer questions, and books appointments 24/7."`,
-        `Lisa AI: "Priya Upadhyay (our founder) will set up your dedicated agent within 24 hours. Check your inbox for setup instructions!"`
+        `Connecting phone call to ${phone}...`,
+        `Lisa AI: "Hi ${userName}! Calling on behalf of ${bName}."`,
+        `Lisa AI: "I reviewed your business details regarding ${bDesc}."`,
+        `Lisa AI: "Our AI agent will handle your outbound calling, lead qualification, and appointment booking 24/7."`,
+        `Lisa AI: "Founder Priya Upadhyay will configure your dedicated agent within 24 hours!"`
       ];
 
       setTranscriptLines(dialogue);
 
-      // Trigger Web Speech API speech synthesis if available
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
-        const fullSpeech = `Hi ${userName}! This is Lisa AI calling on behalf of ${bName}. I noticed your business details: ${bDesc}. Our autonomous system handles lead calls, answers customer questions, and books calendar appointments automatically. Priya Upadhyay will set up your dedicated agent within 24 hours!`;
+        const fullSpeech = `Hi ${userName}! Calling on behalf of ${bName}. I reviewed your business details: ${bDesc}. Our AI handles outbound lead calls, answers questions, and books calendar slots 24/7. Founder Priya Upadhyay will set up your agent within 24 hours!`;
         const utterance = new SpeechSynthesisUtterance(fullSpeech);
         utterance.rate = 1.0;
         utterance.pitch = 1.05;
-        setIsPlayingAudio(true);
-        utterance.onend = () => setIsPlayingAudio(false);
-        utterance.onerror = () => setIsPlayingAudio(false);
         window.speechSynthesis.speak(utterance);
       }
-    }, 2500);
+    }, 2000);
   };
 
   const handleEndCall = () => {
@@ -87,19 +99,27 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content soft-card" onClick={(e) => e.stopPropagation()}>
-        <button className="close-btn" onClick={handleEndCall}>✕</button>
+        <button className="close-btn" onClick={handleEndCall} aria-label="Close modal">
+          <X className="w-4 h-4" />
+        </button>
 
         {callState === "idle" && (
           <div className="modal-body">
             <div className="modal-badge badge-pill badge-lime">
-              <span>📞 Live AI Call Generator</span>
+              <PhoneCall className="w-3.5 h-3.5" />
+              <span>Live AI Call Generator</span>
             </div>
             <h2 className="modal-title font-serif">Book a Personalised Demo Call</h2>
             <p className="modal-sub">
-              Give us your phone number and business details. Lisa AI will call your phone and speak a custom pitch tailored specifically to your business!
+              Enter your phone number and business details. Lisa AI will call your phone and speak a custom pitch tailored specifically to your business!
             </p>
 
-            {errorMessage && <div className="error-box">{errorMessage}</div>}
+            {errorMessage && (
+              <div className="error-box">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
             <form onSubmit={handleStartCall} className="demo-form">
               <div className="form-group">
@@ -115,16 +135,16 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
               </div>
 
               <div className="form-group">
-                <label className="form-label">Your Phone Number (For 1-Time Demo Call) *</label>
+                <label className="form-label">Your Mobile / Phone Number (With Country Code) *</label>
                 <input
                   type="tel"
                   required
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+91 98765 43210 or +1 555 000 0000"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="form-input"
                 />
-                <span className="field-note">⚠️ Limit: Strictly 1 demo call per phone number.</span>
+                <span className="field-note">Strictly 1 free demo call per phone number limit.</span>
               </div>
 
               <div className="form-group">
@@ -139,7 +159,7 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
               </div>
 
               <div className="form-group">
-                <label className="form-label">Describe Your Business & Offers *</label>
+                <label className="form-label">Describe Your Business & Special Offers *</label>
                 <textarea
                   rows={3}
                   required
@@ -150,8 +170,18 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
                 />
               </div>
 
-              <button type="submit" className="btn-lime submit-btn">
-                📞 Call Me Now (Trigger Personalised Demo)
+              <button type="submit" disabled={isCallingApi} className="btn-lime submit-btn">
+                {isCallingApi ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Connecting Telephony Provider...</span>
+                  </>
+                ) : (
+                  <>
+                    <PhoneCall className="w-4 h-4" />
+                    <span>Call Me Now (Trigger Demo Call)</span>
+                  </>
+                )}
               </button>
             </form>
           </div>
@@ -159,9 +189,11 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
 
         {callState === "dialing" && (
           <div className="modal-body call-status-body">
-            <div className="phone-pulse-icon animate-float">📞</div>
+            <div className="phone-pulse-icon animate-float">
+              <Phone className="w-8 h-8" />
+            </div>
             <h2 className="modal-title font-serif">Dialing {phone}...</h2>
-            <p className="modal-sub">Initiating secure SignalWire AI outbound connection to your phone...</p>
+            <p className="modal-sub">Connecting live outbound telephony call to your mobile device...</p>
             <div className="loading-spinner"></div>
           </div>
         )}
@@ -172,7 +204,7 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
               <span className="badge-dot"></span> LIVE DEMO CALL IN PROGRESS
             </div>
             <h2 className="modal-title font-serif">Lisa AI Connected!</h2>
-            <p className="modal-sub">Listening to live personalised AI voice response...</p>
+            <p className="modal-sub">Call in progress on {phone}...</p>
 
             <div className="live-transcript-box">
               {transcriptLines.map((line, idx) => (
@@ -181,23 +213,26 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
             </div>
 
             <button className="btn-primary" onClick={handleEndCall}>
-              Hang Up Call & Close
+              End Call & Close
             </button>
           </div>
         )}
 
         {callState === "limit_reached" && (
           <div className="modal-body call-status-body">
-            <div className="limit-icon">⚠️</div>
+            <div className="limit-icon">
+              <AlertTriangle className="w-10 h-10 text-amber-500" />
+            </div>
             <h2 className="modal-title font-serif">1-Call Limit Reached</h2>
             <p className="modal-sub">
               You have already received your 1 free demo call for number <strong>{phone}</strong>.
             </p>
             <p className="limit-desc">
-              To setup Lisa AI for your business ($1,000 setup fee + 80 free mins), email founder <strong>Priya Upadhyay</strong> directly at:
+              To setup Lisa AI for your business ($1,000 setup fee + 80 free mins), email founder <strong>Priya Upadhyay</strong> directly:
             </p>
             <a href="mailto:priya@callwithlisa.in" className="email-btn btn-lime">
-              ✉️ Email priya@callwithlisa.in
+              <Mail className="w-4 h-4" />
+              <span>Email priya@callwithlisa.in</span>
             </a>
           </div>
         )}
@@ -210,9 +245,9 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(15, 23, 42, 0.7);
+          background: rgba(15, 23, 42, 0.75);
           backdrop-filter: blur(8px);
-          z-index: 1000;
+          z-index: 1100;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -241,8 +276,10 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
           height: 32px;
           border-radius: 50%;
           cursor: pointer;
-          font-size: 1rem;
           color: #0F172A;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .modal-body {
@@ -271,6 +308,9 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
           padding: 10px 14px;
           border-radius: 12px;
           font-size: 0.88rem;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
 
         .demo-form {
@@ -327,10 +367,10 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
         }
 
         .phone-pulse-icon {
-          font-size: 3.5rem;
-          width: 80px;
-          height: 80px;
+          width: 72px;
+          height: 72px;
           background: #C4F135;
+          color: #0F172A;
           border-radius: 50%;
           display: flex;
           align-items: center;
@@ -384,7 +424,9 @@ export default function PersonalizedDemoModal({ onClose }: PersonalizedDemoModal
         }
 
         .limit-icon {
-          font-size: 3rem;
+          display: flex;
+          justify-content: center;
+          margin-bottom: 8px;
         }
 
         .limit-desc {

@@ -1,5 +1,7 @@
 "use client";
 
+import { Check, Sparkles, Zap } from "lucide-react";
+
 export default function WhyChooseUsSection() {
   const whyChooseUs = [
     { title: "Set up within 24 hours", desc: "Just fill a short form, we handle everything else." },
@@ -27,7 +29,8 @@ export default function WhyChooseUsSection() {
         {/* Section Header */}
         <div className="section-header">
           <div className="badge-pill badge-lime">
-            <span>✨ Unmatched Outbound Power</span>
+            <Zap className="w-3.5 h-3.5" />
+            <span>Unmatched Outbound Power</span>
           </div>
           <h2 className="section-title font-serif">Why Choose Lisa AI?</h2>
           <p className="section-subtitle">
@@ -47,7 +50,9 @@ export default function WhyChooseUsSection() {
             <ul className="reasons-list">
               {whyChooseUs.map((item, idx) => (
                 <li key={idx} className="reason-item">
-                  <span className="check-icon">✓</span>
+                  <span className="check-icon">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </span>
                   <div>
                     <strong>{item.title}</strong> — {item.desc}
                   </div>
@@ -66,7 +71,9 @@ export default function WhyChooseUsSection() {
             <ul className="reasons-list list-dark">
               {whyWereDifferent.map((item, idx) => (
                 <li key={idx} className="reason-item">
-                  <span className="star-icon">✦</span>
+                  <span className="star-icon">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </span>
                   <div>
                     <strong className="text-white">{item.title}</strong> — <span className="text-dim-dark">{item.desc}</span>
                   </div>
@@ -200,8 +207,6 @@ export default function WhyChooseUsSection() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.8rem;
-          font-weight: 800;
           flex-shrink: 0;
           margin-top: 2px;
         }
@@ -215,7 +220,6 @@ export default function WhyChooseUsSection() {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 0.85rem;
           flex-shrink: 0;
           margin-top: 2px;
         }

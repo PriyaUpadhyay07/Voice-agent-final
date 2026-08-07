@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HelpCircle, ShieldCheck } from "lucide-react";
 
 interface FAQItem {
   id: number;
@@ -117,7 +118,8 @@ export default function FaqSection() {
       <div className="container">
         <div className="section-header">
           <div className="badge-pill badge-lime">
-            <span>❓ Transparency & Trust</span>
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Transparency & Trust</span>
           </div>
           <h2 className="section-title font-serif">Frequently Asked Questions</h2>
           <p className="section-subtitle">

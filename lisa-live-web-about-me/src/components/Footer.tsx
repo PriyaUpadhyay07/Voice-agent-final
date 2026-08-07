@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Mail, Clock, ShieldCheck, Sparkles } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -8,7 +9,7 @@ export default function Footer() {
       <div className="container footer-content">
         <div className="footer-brand">
           <div className="footer-logo">
-            <span className="logo-icon">✨</span>
+            <Sparkles className="w-5 h-5 text-slate-900" />
             <span className="logo-title font-serif">LISA AI</span>
           </div>
           <p className="footer-desc">
@@ -36,10 +37,16 @@ export default function Footer() {
             <li><Link href="/contact">Contact Page</Link></li>
             <li>
               <a href="mailto:priya@callwithlisa.in" className="email-highlight">
-                priya@callwithlisa.in
+                <Mail className="w-3.5 h-3.5 inline mr-1" />
+                <span>priya@callwithlisa.in</span>
               </a>
             </li>
-            <li><span className="response-tag">⚡ 24-48 hr response guaranteed</span></li>
+            <li>
+              <span className="response-tag">
+                <Clock className="w-3 h-3 inline mr-1" />
+                <span>24-48 hr response guaranteed</span>
+              </span>
+            </li>
           </ul>
         </div>
 
@@ -90,11 +97,7 @@ export default function Footer() {
         .footer-logo {
           display: flex;
           align-items: center;
-          gap: 10px;
-        }
-
-        .logo-icon {
-          font-size: 1.4rem;
+          gap: 8px;
         }
 
         .logo-title {
@@ -163,7 +166,8 @@ export default function Footer() {
           background: #DCFCE7;
           padding: 4px 10px;
           border-radius: 9999px;
-          display: inline-block;
+          display: inline-flex;
+          align-items: center;
         }
 
         .footer-pricing-desc {

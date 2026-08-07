@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Sparkles, Mail, PhoneCall, Clock, Check } from "lucide-react";
 import PersonalizedDemoModal from "@/components/PersonalizedDemoModal";
 
 export default function AboutPage() {
@@ -13,7 +14,8 @@ export default function AboutPage() {
         {/* HERO */}
         <section className="about-hero">
           <div className="badge-pill badge-lime">
-            <span>✨ Founder & Mission</span>
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Founder & Mission</span>
           </div>
           <h1 className="about-title font-serif">About Lisa AI</h1>
           <p className="about-subtitle">
@@ -35,17 +37,19 @@ export default function AboutPage() {
               </p>
               <div className="founder-actions">
                 <a href="mailto:priya@callwithlisa.in" className="btn-primary">
-                  📩 Email Priya Directly (priya@callwithlisa.in)
+                  <Mail className="w-4 h-4" />
+                  <span>Email Priya Directly (priya@callwithlisa.in)</span>
                 </a>
                 <button className="btn-lime" onClick={() => setDemoOpen(true)}>
-                  📞 Book Personalised Demo
+                  <PhoneCall className="w-4 h-4" />
+                  <span>Book Personalised Demo</span>
                 </button>
               </div>
             </div>
 
             <div className="founder-badge-side">
               <div className="founder-box soft-card">
-                <span className="box-icon">✨</span>
+                <Sparkles className="w-10 h-10 text-lime-400" />
                 <h3 className="font-serif">24-Hour Delivery</h3>
                 <p>Fill out our short setup form and your custom AI calling agent goes live within 1 business day.</p>
               </div>
@@ -57,7 +61,8 @@ export default function AboutPage() {
         <section className="pricing-overview-section">
           <div className="section-header text-center">
             <div className="badge-pill badge-lime">
-              <span>💰 Simple, Transparent Pricing</span>
+              <Clock className="w-3.5 h-3.5" />
+              <span>Simple, Transparent Pricing</span>
             </div>
             <h2 className="section-title font-serif">No Hidden Fees. No Contracts.</h2>
           </div>
@@ -68,16 +73,35 @@ export default function AboutPage() {
               <span className="price-sub">One-time Setup Fee</span>
             </div>
             <ul className="pricing-features">
-              <li>✓ Includes 80 FREE Calling Minutes</li>
-              <li>✓ Custom AI Voice Agent built & managed for you</li>
-              <li>✓ Full transcript & call recording dashboard access</li>
-              <li>✓ Instant script editing anytime</li>
-              <li>✓ Upload leads via CSV or Google Sheets</li>
-              <li>✓ After free minutes: pay-as-you-go at $0.25/minute</li>
+              <li>
+                <Check className="w-4 h-4 text-emerald-600 inline mr-2" />
+                <span>Includes 80 FREE Calling Minutes</span>
+              </li>
+              <li>
+                <Check className="w-4 h-4 text-emerald-600 inline mr-2" />
+                <span>Custom AI Voice Agent built & managed for you</span>
+              </li>
+              <li>
+                <Check className="w-4 h-4 text-emerald-600 inline mr-2" />
+                <span>Full transcript & call recording dashboard access</span>
+              </li>
+              <li>
+                <Check className="w-4 h-4 text-emerald-600 inline mr-2" />
+                <span>Instant script editing anytime</span>
+              </li>
+              <li>
+                <Check className="w-4 h-4 text-emerald-600 inline mr-2" />
+                <span>Upload leads via CSV or Google Sheets</span>
+              </li>
+              <li>
+                <Check className="w-4 h-4 text-emerald-600 inline mr-2" />
+                <span>After free minutes: pay-as-you-go at $0.25/minute</span>
+              </li>
             </ul>
             <div className="pricing-action">
               <Link href="/contact" className="btn-primary" style={{ width: "100%", justifyContent: "center" }}>
-                🚀 Get Started ($1,000 Setup)
+                <Mail className="w-4 h-4" />
+                <span>Get Started ($1,000 Setup)</span>
               </Link>
             </div>
           </div>
@@ -173,10 +197,6 @@ export default function AboutPage() {
           color: #94A3B8;
           font-size: 0.9rem;
           line-height: 1.5;
-        }
-
-        .box-icon {
-          font-size: 2.5rem;
         }
 
         .pricing-overview-section {

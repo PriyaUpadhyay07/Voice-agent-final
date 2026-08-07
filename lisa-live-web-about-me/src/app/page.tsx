@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Zap, Mail, Sparkles, PhoneCall, Scale } from "lucide-react";
 import WhyChooseUsSection from "@/components/WhyChooseUsSection";
 import AudioDemo from "@/components/AudioDemo";
 import FaqSection from "@/components/FaqSection";
@@ -16,7 +17,8 @@ export default function Home() {
       <section className="hero-section">
         <div className="container hero-container">
           <div className="hero-badge badge-pill badge-lime animate-float">
-            <span>⚡ Autonomous Outbound Calling Agent</span>
+            <Zap className="w-3.5 h-3.5" />
+            <span>Autonomous Outbound Calling Agent</span>
           </div>
 
           <h1 className="hero-title font-serif">
@@ -32,17 +34,20 @@ export default function Home() {
 
           <div className="hero-actions">
             <Link href="/contact" className="btn-primary">
-              📩 Contact Us
+              <Mail className="w-4 h-4" />
+              <span>Contact Us</span>
             </Link>
             <a href="#why-us" className="btn-secondary">
-              ✨ Why Choose Us
+              <Sparkles className="w-4 h-4" />
+              <span>Why Choose Us</span>
             </a>
             <button 
               className="btn-lime"
               onClick={() => setDemoModalOpen(true)}
               id="btn-hero-personalised-demo"
             >
-              📞 Book Personalised Demo
+              <PhoneCall className="w-4 h-4" />
+              <span>Book Personalised Demo</span>
             </button>
           </div>
 
@@ -82,7 +87,8 @@ export default function Home() {
         <div className="container">
           <div className="soft-card cta-box text-center">
             <div className="badge-pill badge-lime">
-              <span>🚀 Ready to Automate Your Calls?</span>
+              <Zap className="w-3.5 h-3.5" />
+              <span>Ready to Automate Your Calls?</span>
             </div>
             <h2 className="cta-heading font-serif">Let Lisa AI Handle Your Outbound Calls</h2>
             <p className="cta-desc">
@@ -90,13 +96,16 @@ export default function Home() {
             </p>
             <div className="cta-btn-group">
               <Link href="/contact" className="btn-primary">
-                📩 Contact Priya (priya@callwithlisa.in)
+                <Mail className="w-4 h-4" />
+                <span>Contact Priya (priya@callwithlisa.in)</span>
               </Link>
               <button className="btn-lime" onClick={() => setDemoModalOpen(true)}>
-                📞 Book Personalised Demo Call
+                <PhoneCall className="w-4 h-4" />
+                <span>Book Personalised Demo Call</span>
               </button>
               <Link href="/terms" className="btn-secondary">
-                ⚖️ View Terms & Conditions
+                <Scale className="w-4 h-4" />
+                <span>View Terms & Conditions</span>
               </Link>
             </div>
           </div>
@@ -112,7 +121,7 @@ export default function Home() {
         }
 
         .hero-section {
-          padding: 90px 0 60px 0;
+          padding: 70px 0 60px 0;
           text-align: center;
         }
 

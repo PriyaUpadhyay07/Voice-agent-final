@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Scale, Mail, ArrowLeft, Send } from "lucide-react";
 
 export default function TermsPage() {
   return (
@@ -9,7 +10,8 @@ export default function TermsPage() {
         {/* Header */}
         <div className="terms-header">
           <div className="badge-pill badge-lime">
-            <span>⚖️ Legal & Policy Guidelines</span>
+            <Scale className="w-3.5 h-3.5" />
+            <span>Legal & Policy Guidelines</span>
           </div>
           <h1 className="terms-title font-serif">Terms & Conditions</h1>
           <p className="terms-date">Effective Date: August 2026 | Lisa AI (callwithlisa.in)</p>
@@ -86,10 +88,12 @@ export default function TermsPage() {
             </p>
             <div className="terms-actions">
               <Link href="/" className="btn-secondary">
-                ← Back to Home
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Home</span>
               </Link>
               <Link href="/contact" className="btn-primary">
-                📩 Contact Priya
+                <Send className="w-4 h-4" />
+                <span>Contact Priya</span>
               </Link>
             </div>
           </div>

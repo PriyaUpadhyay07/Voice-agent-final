@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Mic, Play, Pause, PhoneCall } from "lucide-react";
 import PersonalizedDemoModal from "./PersonalizedDemoModal";
 
 export interface VoiceModel {
@@ -88,7 +89,8 @@ export default function AudioDemo() {
         {/* ElevenLabs Style Title & Header */}
         <div className="section-header">
           <div className="badge-pill badge-lime">
-            <span>🎙️ AI Voice Generator & Models</span>
+            <Mic className="w-3.5 h-3.5" />
+            <span>AI Voice Generator & Models</span>
           </div>
           <h2 className="section-title font-serif">Bringing Technology to Life</h2>
           <p className="section-subtitle">
@@ -96,7 +98,8 @@ export default function AudioDemo() {
           </p>
           <div className="header-cta-wrap">
             <button className="btn-primary" onClick={() => setDemoModalOpen(true)}>
-              📞 Book a Personalised Demo Call
+              <PhoneCall className="w-4 h-4" />
+              <span>Book a Personalised Demo Call</span>
             </button>
           </div>
         </div>
@@ -121,7 +124,7 @@ export default function AudioDemo() {
             ))}
           </div>
 
-          {/* Main Visualizer Stage (Image 3 inspired) */}
+          {/* Main Visualizer Stage */}
           <div className="voice-stage">
             <div className="spheres-row">
               {voices.map((v) => {
@@ -142,7 +145,7 @@ export default function AudioDemo() {
                     >
                       {isActive && (
                         <button className="play-icon-btn" onClick={handlePlayVoice}>
-                          {isPlaying ? "⏸" : "▶"}
+                          {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
                         </button>
                       )}
                     </div>
@@ -161,21 +164,35 @@ export default function AudioDemo() {
               </div>
 
               <div className="sample-text-box">
-                <p className="sample-label">🎙️ Live AI Voice Script Preview:</p>
+                <p className="sample-label">
+                  <Mic className="w-3.5 h-3.5 inline mr-1" />
+                  <span>Live AI Voice Script Preview:</span>
+                </p>
                 <p className="sample-quote">&ldquo;{activeVoice.sampleText}&rdquo;</p>
               </div>
 
               <div className="voice-actions">
                 <button className="btn-lime" onClick={handlePlayVoice}>
-                  {isPlaying ? "⏸️ Pause Voice Audio" : "▶️ Listen Voice Sample"}
+                  {isPlaying ? (
+                    <>
+                      <Pause className="w-4 h-4" />
+                      <span>Pause Voice Audio</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Listen Voice Sample</span>
+                    </>
+                  )}
                 </button>
                 <button className="btn-secondary" onClick={() => setDemoModalOpen(true)}>
-                  📞 Book Demo Call For Your Business
+                  <PhoneCall className="w-4 h-4" />
+                  <span>Book Demo Call For Your Business</span>
                 </button>
               </div>
             </div>
 
-            {/* Bottom Feature Tags (Image 3 style) */}
+            {/* Bottom Feature Tags */}
             <div className="feature-tags-row">
               <span className="ft-tag active-tag">AI Voice Generator</span>
               <span className="ft-tag">Text to Speech</span>
@@ -331,7 +348,6 @@ export default function AudioDemo() {
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          font-size: 1.2rem;
           color: #0F172A;
           cursor: pointer;
           display: flex;
