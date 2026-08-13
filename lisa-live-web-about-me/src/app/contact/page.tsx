@@ -31,6 +31,8 @@ export default function ContactPage() {
     } finally {
       setIsSubmitting(false);
       setSubmitted(true);
+    }
+
     const mailSubject = encodeURIComponent(`Lisa AI Inquiry: ${topic} - ${name}`);
     const mailBody = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nCompany: ${company}\nTopic: ${topic}\n\nMessage:\n${message}`
