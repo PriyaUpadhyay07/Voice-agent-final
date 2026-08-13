@@ -6,7 +6,7 @@ import { Mail, PhoneCall, Scale, Zap } from "lucide-react";
 import WhyChooseUsSection from "@/components/WhyChooseUsSection";
 import FaqSection from "@/components/FaqSection";
 import PersonalizedDemoModal from "@/components/PersonalizedDemoModal";
-import ParticleWaveGlobe from "@/components/ParticleWaveGlobe";
+import LisaVoiceCard from "@/components/LisaVoiceCard";
 
 export default function Home() {
   const [demoModalOpen, setDemoModalOpen] = useState(false);
@@ -16,7 +16,7 @@ export default function Home() {
       {/* HERO SECTION WITH HORIZONTAL FACE-TO-FACE TOP ROW + 4 HORIZONTAL STAT CARDS BELOW */}
       <section className="hero-section">
         <div className="container hero-container">
-          {/* TOP HORIZONTAL ROW: LEFT TEXT + RIGHT PARTICLE MATRIX GLOBE */}
+          {/* TOP HORIZONTAL ROW: LEFT TEXT + RIGHT LISA VOICE GLASS CARD */}
           <div className="hero-top-row">
             {/* LEFT COLUMN */}
             <div className="hero-left">
@@ -48,9 +48,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: 3D PARTICLE MATRIX WAVE GLOBE */}
+            {/* RIGHT COLUMN: LISA AI VOICE CALL GLASS CARD */}
             <div className="hero-right">
-              <ParticleWaveGlobe />
+              <LisaVoiceCard />
             </div>
           </div>
 
