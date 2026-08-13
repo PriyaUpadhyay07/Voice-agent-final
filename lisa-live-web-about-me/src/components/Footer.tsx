@@ -66,7 +66,6 @@ export default function Footer() {
           <div className="footer-legal">
             <Link href="/terms">Terms & Conditions</Link>
             <Link href="/contact">Support</Link>
-            <a href="mailto:priya@callwithlisa.in">Email Priya</a>
           </div>
         </div>
       </div>

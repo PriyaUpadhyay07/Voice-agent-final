@@ -52,7 +52,7 @@ export default function ContactPage() {
           </div>
           <h1 className="contact-title font-serif">Get in Touch with Lisa AI</h1>
           <p className="contact-subtitle">
-            All messages deliver directly to <strong>Priya Upadhyay</strong> (Founder, Lisa AI) at <a href="mailto:priya@callwithlisa.in" className="link-bold">priya@callwithlisa.in</a>.
+            All messages deliver directly to <strong>Priya Upadhyay</strong> (Founder, Lisa AI).
           </p>
         </section>
 
@@ -64,7 +64,7 @@ export default function ContactPage() {
               <form onSubmit={handleSubmit} className="contact-form">
                 <h3 className="form-title font-serif">Send Priya a Message</h3>
                 <p className="form-desc">
-                  Fill out the form below or email <a href="mailto:priya@callwithlisa.in">priya@callwithlisa.in</a> directly.
+                  Fill out the form below to send a direct message.
                 </p>
 
                 <div className="form-row">
@@ -164,7 +164,7 @@ export default function ContactPage() {
                   id="btn-submit-contact-form"
                 >
                   <Send className="w-4 h-4" />
-                  <span>{isSubmitting ? "Sending to priya@callwithlisa.in..." : "Send Message to Priya"}</span>
+                  <span>{isSubmitting ? "Sending message..." : "Send Message to Priya"}</span>
                 </button>
               </form>
             ) : (
@@ -172,11 +172,11 @@ export default function ContactPage() {
                 <CheckCircle2 className="w-12 h-12 text-emerald-500" />
                 <h3 className="font-serif">Message Dispatched!</h3>
                 <p>
-                  Thank you, <strong>{name}</strong>! Your inquiry regarding <strong>{topic}</strong> is dispatched to <strong>priya@callwithlisa.in</strong>.
+                  Thank you, <strong>{name}</strong>! Your inquiry regarding <strong>{topic}</strong> has been sent directly to Priya.
                 </p>
                 <div className="success-notice">
                   <Clock className="w-4 h-4 inline mr-1" />
-                  <span>Priya personally reviews every email and will reply to <strong>{email}</strong> within 24-48 hours.</span>
+                  <span>Priya personally reviews every message and will reply to <strong>{email}</strong> within 24-48 hours.</span>
                 </div>
                 <div className="submitted-actions">
                   <button className="btn-secondary" onClick={() => setSubmitted(false)}>
@@ -207,16 +207,6 @@ export default function ContactPage() {
                   <div className="info-text">
                     <strong>Founder:</strong>
                     <span>Priya Upadhyay</span>
-                  </div>
-                </div>
-
-                <div className="info-item">
-                  <div className="info-icon">
-                    <Mail className="w-5 h-5 text-slate-800" />
-                  </div>
-                  <div className="info-text">
-                    <strong>Official Email:</strong>
-                    <a href="mailto:priya@callwithlisa.in">priya@callwithlisa.in</a>
                   </div>
                 </div>
 
