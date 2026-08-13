@@ -20,7 +20,7 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Post submission payload to server backend
+      // Post submission payload to server backend (Nodemailer dispatches email directly to priya@callwithlisa.in)
       await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -32,13 +32,6 @@ export default function ContactPage() {
       setIsSubmitting(false);
       setSubmitted(true);
     }
-
-    const mailSubject = encodeURIComponent(`Lisa AI Inquiry: ${topic} - ${name}`);
-    const mailBody = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nCompany: ${company}\nTopic: ${topic}\n\nMessage:\n${message}`
-    );
-    const mailUrl = `mailto:priya@callwithlisa.in?subject=${mailSubject}&body=${mailBody}`;
-    window.location.href = mailUrl;
   };
 
   return (
