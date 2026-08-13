@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import { Instrument_Serif, Inter } from "next/font/google";
+import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-const instrumentSerif = Instrument_Serif({
-  weight: ["400"],
+const outfit = Outfit({
   subsets: ["latin"],
-  style: ["normal", "italic"],
-  variable: "--font-serif",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-outfit",
 });
 
 const inter = Inter({
@@ -28,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${instrumentSerif.variable} ${inter.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${inter.variable}`}>
       <body>
         <Navbar />
         <main>{children}</main>
@@ -37,4 +36,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 

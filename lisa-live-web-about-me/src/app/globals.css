@@ -20,7 +20,7 @@
   --border-strong: #CBD5E1;
   --border-dark: #334155;
   
-  --font-heading: var(--font-serif), 'Instrument Serif', Georgia, serif;
+  --font-heading: var(--font-outfit), 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: var(--font-sans), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   
   --radius-sm: 8px;
@@ -54,11 +54,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Typography */
+/* Straight, Modern, Cool Sans Typography inspired by Image 3 */
 h1, h2, h3, .font-serif {
   font-family: var(--font-heading);
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  font-style: normal !important;
+  letter-spacing: -0.03em;
 }
 
 /* Container */

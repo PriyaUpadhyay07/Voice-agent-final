@@ -31,14 +31,12 @@ export default function ContactPage() {
     } finally {
       setIsSubmitting(false);
       setSubmitted(true);
-    }
-
-    // 2. Direct mailto trigger fallback to guarantee email client opens with recipient priya@callwithlisa.in
     const mailSubject = encodeURIComponent(`Lisa AI Inquiry: ${topic} - ${name}`);
     const mailBody = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nCompany: ${company}\nTopic: ${topic}\n\nMessage:\n${message}`
     );
-    window.open(`mailto:priya@callwithlisa.in?subject=${mailSubject}&body=${mailBody}`, "_blank");
+    const mailUrl = `mailto:priya@callwithlisa.in?subject=${mailSubject}&body=${mailBody}`;
+    window.location.href = mailUrl;
   };
 
   return (

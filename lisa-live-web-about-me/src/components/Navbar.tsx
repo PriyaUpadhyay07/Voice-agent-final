@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PhoneCall, Mail } from "lucide-react";
+import { PhoneCall } from "lucide-react";
 import PersonalizedDemoModal from "./PersonalizedDemoModal";
 
 export default function Navbar() {
@@ -13,23 +13,16 @@ export default function Navbar() {
     <>
       <div className="navbar-wrapper">
         <header className="floating-navbar">
-          {/* Nav Links (No Logo) */}
+          {/* Nav Links (Strictly 4 links + 1 Book Demo button) */}
           <nav className={`nav-links ${mobileMenuOpen ? "active" : ""}`}>
             <Link href="/" onClick={() => setMobileMenuOpen(false)}>Home</Link>
             <Link href="/#why-us" onClick={() => setMobileMenuOpen(false)}>Why Choose Us</Link>
-            <Link href="/#voices" onClick={() => setMobileMenuOpen(false)}>Voices</Link>
             <Link href="/#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</Link>
             <Link href="/terms" onClick={() => setMobileMenuOpen(false)}>Terms</Link>
-            <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
           </nav>
 
-          {/* Action Pills inspired by uploaded Image 1 */}
+          {/* Action Button: Book Demo */}
           <div className="nav-actions">
-            <a href="mailto:priya@callwithlisa.in" className="email-capsule-btn">
-              <Mail className="w-3.5 h-3.5" />
-              <span>priya@callwithlisa.in</span>
-            </a>
-            
             <button 
               className="demo-capsule-btn"
               onClick={() => setDemoOpen(true)}
@@ -67,7 +60,7 @@ export default function Navbar() {
 
         .floating-navbar {
           pointer-events: auto;
-          background: rgba(15, 23, 42, 0.88);
+          background: rgba(15, 23, 42, 0.92);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid rgba(255, 255, 255, 0.15);
@@ -78,7 +71,7 @@ export default function Navbar() {
           justify-content: space-between;
           gap: 32px;
           box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
-          max-width: 960px;
+          max-width: 780px;
           width: 100%;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -86,13 +79,13 @@ export default function Navbar() {
         .nav-links {
           display: flex;
           align-items: center;
-          gap: 24px;
+          gap: 28px;
         }
 
         .nav-links :global(a) {
           color: rgba(255, 255, 255, 0.85);
           font-family: var(--font-body);
-          font-size: 0.88rem;
+          font-size: 0.9rem;
           font-weight: 500;
           transition: all 0.2s ease;
           text-decoration: none;
@@ -108,34 +101,13 @@ export default function Navbar() {
           gap: 10px;
         }
 
-        .email-capsule-btn {
-          background: #FFFFFF;
-          color: #0F172A;
-          border-radius: 9999px;
-          padding: 8px 18px;
-          font-family: var(--font-body);
-          font-size: 0.82rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          text-decoration: none;
-          transition: all 0.25s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .email-capsule-btn:hover {
-          background: #F1F5F9;
-          transform: translateY(-1px);
-        }
-
         .demo-capsule-btn {
           background: #C4F135;
           color: #0F172A;
           border-radius: 9999px;
-          padding: 8px 18px;
+          padding: 9px 20px;
           font-family: var(--font-body);
-          font-size: 0.82rem;
+          font-size: 0.85rem;
           font-weight: 600;
           border: none;
           cursor: pointer;
@@ -143,7 +115,7 @@ export default function Navbar() {
           align-items: center;
           gap: 6px;
           transition: all 0.25s ease;
-          box-shadow: 0 2px 8px rgba(196, 241, 53, 0.3);
+          box-shadow: 0 2px 10px rgba(196, 241, 53, 0.35);
         }
 
         .demo-capsule-btn:hover {
@@ -161,10 +133,7 @@ export default function Navbar() {
           padding: 4px;
         }
 
-        @media (max-width: 900px) {
-          .email-capsule-btn {
-            display: none;
-          }
+        @media (max-width: 768px) {
           .nav-links {
             display: none;
             position: absolute;
@@ -192,3 +161,4 @@ export default function Navbar() {
     </>
   );
 }
+
