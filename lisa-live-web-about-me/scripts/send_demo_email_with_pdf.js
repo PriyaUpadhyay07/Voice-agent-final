@@ -1,6 +1,7 @@
 const nodemailer = require("nodemailer");
 const path = require("path");
 const fs = require("fs");
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 async function sendDemoEmail(clientEmail, clientName, demoUrl) {
   try {
@@ -10,18 +11,35 @@ async function sendDemoEmail(clientEmail, clientName, demoUrl) {
       throw new Error(`PDF file not found at ${pdfPath}`);
     }
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // TLS
-      auth: {
-        user: "upadhyaypriya974@gmail.com",
-        pass: "ygzbyktvqmbnkkaa",
-      },
-    });
+    const bigrockPass = process.env.BIGROCK_SMTP_PASS;
+    const useBigRock = bigrockPass && bigrockPass !== "PASTE_YOUR_BIGROCK_EMAIL_PASSWORD_HERE";
+
+    const transporter = nodemailer.createTransport(
+      useBigRock
+        ? {
+            host: process.env.BIGROCK_SMTP_HOST || "mail.callwithlisa.in",
+            port: Number(process.env.BIGROCK_SMTP_PORT) || 465,
+            secure: true,
+            auth: {
+              user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
+              pass: bigrockPass,
+            },
+          }
+        : {
+            host: "smtp.gmail.com",
+            port: 587,
+            secure: false,
+            auth: {
+              user: "upadhyaypriya974@gmail.com",
+              pass: "ygzbyktvqmbnkkaa",
+            },
+          }
+    );
+
+    const senderEmail = useBigRock ? "priya@callwithlisa.in" : "upadhyaypriya974@gmail.com";
 
     const mailOptions = {
-      from: `"Priya Upadhyay (Lisa AI)" <priya@callwithlisa.in>`,
+      from: `"Priya Upadhyay (Lisa AI)" <${senderEmail}>`,
       to: clientEmail,
       replyTo: "priya@callwithlisa.in",
       cc: "priya@callwithlisa.in, upadhyaypriya974@gmail.com",
@@ -55,7 +73,7 @@ async function sendDemoEmail(clientEmail, clientName, demoUrl) {
       ],
     };
 
-    console.log(`Sending email to ${clientEmail} with attached PDF...`);
+    console.log(`Sending email via ${useBigRock ? "BigRock" : "Gmail"} to ${clientEmail}...`);
     const info = await transporter.sendMail(mailOptions);
     console.log("SUCCESS! Email sent successfully. MessageId:", info.messageId);
   } catch (err) {
