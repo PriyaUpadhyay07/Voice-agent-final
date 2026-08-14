@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully via", useBigRock ? "BigRock" : "Gmail", info.messageId);
+    console.log("Email sent successfully via Titan Webmail", info.messageId);
 
     return NextResponse.json({
       success: true,
