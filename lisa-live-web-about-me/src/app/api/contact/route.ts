@@ -9,17 +9,19 @@ export async function POST(req: Request) {
     console.log("=== DISPATCHING CONTACT FORM EMAIL TO priya@callwithlisa.in ===");
     console.log(`From: ${name} <${email}> | Phone: ${phone || "N/A"}`);
 
-    const bigrockPass = process.env.BIGROCK_SMTP_PASS;
-    const useBigRock = bigrockPass && bigrockPass !== "PASTE_YOUR_BIGROCK_EMAIL_PASSWORD_HERE";
+    const smtpUser = process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in";
+    const smtpPass = process.env.BIGROCK_SMTP_PASS || "#Priya123@Priya";
+    const smtpHost = process.env.BIGROCK_SMTP_HOST || "smtp.titan.email";
+    const smtpPort = Number(process.env.BIGROCK_SMTP_PORT) || 465;
 
     const transporter = nodemailer.createTransport({
-      host: process.env.BIGROCK_SMTP_HOST || "smtp.titan.email",
-      port: Number(process.env.BIGROCK_SMTP_PORT) || 465,
-      secure: true, // SSL
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465, // SSL
       family: 4,
       auth: {
-        user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
-        pass: bigrockPass,
+        user: smtpUser,
+        pass: smtpPass,
       },
     } as any);
 
