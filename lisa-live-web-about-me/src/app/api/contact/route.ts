@@ -12,34 +12,22 @@ export async function POST(req: Request) {
     const bigrockPass = process.env.BIGROCK_SMTP_PASS;
     const useBigRock = bigrockPass && bigrockPass !== "PASTE_YOUR_BIGROCK_EMAIL_PASSWORD_HERE";
 
-    const transporter = nodemailer.createTransport(
-      useBigRock
-        ? {
-            host: process.env.BIGROCK_SMTP_HOST || "mail.callwithlisa.in",
-            port: Number(process.env.BIGROCK_SMTP_PORT) || 465,
-            secure: true, // SSL
-            auth: {
-              user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
-              pass: bigrockPass,
-            },
-          }
-        : {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false, // TLS
-            auth: {
-              user: process.env.GMAIL_USER || "upadhyaypriya974@gmail.com",
-              pass: process.env.GMAIL_PASS || "ygzbyktvqmbnkkaa",
-            },
-          }
-    );
+    const transporter = nodemailer.createTransport({
+      host: process.env.BIGROCK_SMTP_HOST || "smtp.titan.email",
+      port: Number(process.env.BIGROCK_SMTP_PORT) || 465,
+      secure: true, // SSL
+      family: 4,
+      auth: {
+        user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
+        pass: bigrockPass,
+      },
+    });
 
-    const senderEmail = useBigRock ? "priya@callwithlisa.in" : "upadhyaypriya974@gmail.com";
+    const senderEmail = "priya@callwithlisa.in";
 
     const mailOptions = {
       from: `"Lisa AI Contact Form" <${senderEmail}>`,
       to: "priya@callwithlisa.in",
-      cc: "upadhyaypriya974@gmail.com",
       replyTo: email || undefined,
       subject: `[Lisa AI Lead Inquiry] ${topic || "General Inquiry"} - ${name || "Website Lead"}`,
       html: `

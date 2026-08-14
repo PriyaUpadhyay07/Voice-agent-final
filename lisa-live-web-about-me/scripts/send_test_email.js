@@ -13,9 +13,10 @@ async function sendTestEmail() {
     });
 
     const mailOptions = {
-      from: `"Priya Upadhyay | Lisa AI" <upadhyaypriya974@gmail.com>`,
+      from: `"Priya Upadhyay | Lisa AI" <priya@callwithlisa.in>`,
       to: "upadhyaykanu4@gmail.com",
-      cc: "priya@callwithlisa.in, upadhyaypriya974@gmail.com",
+      replyTo: "priya@callwithlisa.in",
+      cc: "priya@callwithlisa.in",
       subject: "Lisa AI - Your Personalised Demo Call Portal URL",
       html: `
         <div style="font-family: Arial, sans-serif; font-size: 15px; color: #0F172A; line-height: 1.6; max-width: 560px; border: 1px solid #E2E8F0; padding: 24px; border-radius: 12px; background: #FFFFFF;">

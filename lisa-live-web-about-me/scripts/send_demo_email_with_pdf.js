@@ -13,36 +13,24 @@ async function sendDemoEmail(clientEmail, clientName, demoUrl) {
 
     const bigrockPass = process.env.BIGROCK_SMTP_PASS;
     const useBigRock = bigrockPass && bigrockPass !== "PASTE_YOUR_BIGROCK_EMAIL_PASSWORD_HERE";
+    const bigrockPort = Number(process.env.BIGROCK_SMTP_PORT) || 465;
 
-    const transporter = nodemailer.createTransport(
-      useBigRock
-        ? {
-            host: process.env.BIGROCK_SMTP_HOST || "mail.callwithlisa.in",
-            port: Number(process.env.BIGROCK_SMTP_PORT) || 465,
-            secure: true,
-            auth: {
-              user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
-              pass: bigrockPass,
-            },
-          }
-        : {
-            host: "smtp.gmail.com",
-            port: 587,
-            secure: false,
-            auth: {
-              user: "upadhyaypriya974@gmail.com",
-              pass: "ygzbyktvqmbnkkaa",
-            },
-          }
-    );
-
-    const senderEmail = useBigRock ? "priya@callwithlisa.in" : "upadhyaypriya974@gmail.com";
+    const transporter = nodemailer.createTransport({
+      host: process.env.BIGROCK_SMTP_HOST || "smtp.titan.email",
+      port: Number(process.env.BIGROCK_SMTP_PORT) || 465,
+      secure: true,
+      family: 4,
+      auth: {
+        user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
+        pass: process.env.BIGROCK_SMTP_PASS,
+      },
+    });
 
     const mailOptions = {
-      from: `"Priya Upadhyay (Lisa AI)" <${senderEmail}>`,
+      from: `"Priya Upadhyay (Lisa AI)" <priya@callwithlisa.in>`,
       to: clientEmail,
       replyTo: "priya@callwithlisa.in",
-      cc: "priya@callwithlisa.in, upadhyaypriya974@gmail.com",
+      cc: "priya@callwithlisa.in",
       subject: "Lisa AI - Your Personalised Demo Call Portal URL",
       html: `
         <div style="font-family: Arial, sans-serif; font-size: 15px; color: #0F172A; line-height: 1.6; max-width: 560px; border: 1px solid #E2E8F0; padding: 24px; border-radius: 12px; background: #FFFFFF;">
@@ -73,9 +61,9 @@ async function sendDemoEmail(clientEmail, clientName, demoUrl) {
       ],
     };
 
-    console.log(`Sending email via ${useBigRock ? "BigRock" : "Gmail"} to ${clientEmail}...`);
+    console.log(`Sending email via Titan Webmail (priya@callwithlisa.in) to ${clientEmail}...`);
     const info = await transporter.sendMail(mailOptions);
-    console.log("SUCCESS! Email sent successfully. MessageId:", info.messageId);
+    console.log("SUCCESS! Email sent successfully via priya@callwithlisa.in. MessageId:", info.messageId);
   } catch (err) {
     console.error("ERROR sending email:", err);
   }
