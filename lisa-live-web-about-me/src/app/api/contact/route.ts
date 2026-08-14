@@ -21,7 +21,7 @@ export async function POST(req: Request) {
         user: process.env.BIGROCK_SMTP_USER || "priya@callwithlisa.in",
         pass: bigrockPass,
       },
-    });
+    } as any);
 
     const senderEmail = "priya@callwithlisa.in";
 
